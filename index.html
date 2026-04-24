@@ -1782,7 +1782,8 @@
       const addWarehouse = async () => {
         if (!newWhName.trim()) return;
         const updatedWarehouses = [...warehouses, { id: 'w_' + Date.now(), name: newWhName }];
-        await updateDoc(getDocRef('bar_settings', 'config'), { warehouses: updatedWarehouses }, {merge:true});
+        // 修改為 setDoc 才能在 config 文件不存在時自動建立
+        await setDoc(getDocRef('bar_settings', 'config'), { warehouses: updatedWarehouses }, {merge:true});
         logAction('系統設定', `新增倉庫: ${newWhName}`);
         setNewWhName('');
       };
@@ -1790,7 +1791,8 @@
       const delWarehouse = async (wId) => {
         if (warehouses.length <= 1) return showAlert("系統至少需要保留一個倉庫");
         const updatedWarehouses = warehouses.filter(w => w.id !== wId);
-        await updateDoc(getDocRef('bar_settings', 'config'), { warehouses: updatedWarehouses }, {merge:true});
+        // 修改為 setDoc
+        await setDoc(getDocRef('bar_settings', 'config'), { warehouses: updatedWarehouses }, {merge:true});
         logAction('系統設定', `移除倉庫節點`);
       };
 
