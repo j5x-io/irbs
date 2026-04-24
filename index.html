@@ -326,19 +326,6 @@
         return () => unsubscribers.forEach(u => u());
       }, [firebaseUser]);
 
-      // 管理員預設建立
-      useEffect(() => {
-        if (!firebaseUser) return;
-        const timer = setTimeout(async () => {
-          if (allData.roles.length === 0 && allData.users.length === 0) {
-            const allTrue = PERMISSION_LIST.reduce((acc, curr) => ({ ...acc, [curr.id]: true }), {});
-            await setDoc(getDocRef('bar_roles', 'admin_role'), { name: '超級管理員', permissions: allTrue, isSystem: true });
-            await setDoc(getDocRef('bar_users', 'default_admin'), { name: '花大熊', password: 'SAD', role: 'admin_role', isOnline: false, lastActive: Date.now() });
-          }
-        }, 2000);
-        return () => clearTimeout(timer);
-      }, [firebaseUser, allData.roles.length, allData.users.length]);
-
       // 線上狀態
       useEffect(() => {
         if (!appUser || isGuest) return;
