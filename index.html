@@ -1,1 +1,1955 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鐵騎酒吧 IRON RIDER BAR SYSTEM</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel for JSX compilation directly in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Import Maps for ES Modules -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js",
+        "firebase/analytics": "https://www.gstatic.com/firebasejs/10.10.0/firebase-analytics.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js",
+        "lucide-react": "https://esm.sh/lucide-react@0.344.0"
+      }
+    }
+  </script>
 
+  <!-- Global Styles -->
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-left: 1px solid rgba(220,38,38,0.1); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(153,27,27,0.6); border-radius: 0px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(220,38,38,0.8); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#050505] text-gray-200 font-sans selection:bg-red-500/30 overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')]">
+  
+  <div id="root"></div>
+
+  <!-- React & App Logic -->
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { initializeApp } from 'firebase/app';
+    import { getAnalytics } from 'firebase/analytics';
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+    import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, writeBatch } from 'firebase/firestore';
+    import {
+      Home, ShoppingCart, ListOrdered, Utensils, Package, Tags, Users, LogOut, GripVertical,
+      Plus, Trash2, Edit, Check, X, Clock, Play, Square, DollarSign, TrendingUp, AlertCircle, Activity,
+      Settings, Download, Upload, FileJson, ChevronLeft, ChevronRight, BarChart2, Calendar, Trophy, History, Sliders, Shield, Search, AlertTriangle, Zap, Calculator, ImageIcon, Copy, FileSpreadsheet, Warehouse, Eye, EyeOff
+    } from 'lucide-react';
+
+    // --- Firebase Initialization ---
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZRWfUdwo8x8lnZtAEPVNRU-CKZyZTjdw",
+      authDomain: "jsvtb-48aff.firebaseapp.com",
+      projectId: "jsvtb-48aff",
+      storageBucket: "jsvtb-48aff.firebasestorage.app",
+      messagingSenderId: "1010311063638",
+      appId: "1:1010311063638:web:870c56def83e1de1df73f7",
+      measurementId: "G-VV0PYS1VP0"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 根目錄設定為 irbs，主要資料庫文件為 system_data
+    const ROOT_COLL = 'irbs';
+    const ROOT_DOC = 'system_data';
+
+    const getCollRef = (collName) => collection(db, ROOT_COLL, ROOT_DOC, collName);
+    const getDocRef = (collName, docId) => doc(db, ROOT_COLL, ROOT_DOC, collName, docId);
+
+    const toLocalDatetime = (isoStr) => {
+      const d = new Date(isoStr);
+      const pad = n => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const PERMISSION_LIST = [
+      { id: 'dashboard', label: '儀表板' }, { id: 'pos', label: '點餐系統' },
+      { id: 'orders', label: '記帳歷史' }, { id: 'menu', label: '菜單管理' },
+      { id: 'inventory', label: '庫存管理' }, { id: 'tags', label: '標籤管理' },
+      { id: 'activities', label: '活動優惠' }, { id: 'users', label: '成員管理' },
+      { id: 'roles', label: '權限職位' }, { id: 'settings', label: '系統設定' }
+    ];
+
+    const COLL_NAMES_MAP = {
+      bar_users: '成員帳號', bar_roles: '權限職位', bar_categories: '菜單分類',
+      bar_items: '菜單品項', bar_tags: '標籤', bar_activities: '活動優惠',
+      bar_ingredients: '食材庫存', bar_orders: '記帳歷史', bar_inventory: '進貨紀錄',
+      bar_operation_logs: '操作紀錄', bar_settings: '系統設定'
+    };
+
+    // --- Context API ---
+    const AppContext = createContext(null);
+    const useAppContext = () => useContext(AppContext);
+
+    // --- Reusable UI Components ---
+    const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }) => {
+      const baseStyle = "px-4 py-2 rounded-sm font-black tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all";
+      const variants = {
+        primary: "bg-gradient-to-b from-red-700 to-red-900 text-white hover:from-red-600 hover:to-red-800 shadow-[0_0_15px_rgba(220,38,38,0.5)] border border-red-500/50",
+        secondary: "bg-gradient-to-b from-yellow-600 to-yellow-800 text-white hover:from-yellow-500 hover:to-yellow-700 shadow-[0_0_15px_rgba(234,179,8,0.4)] border border-yellow-500/50",
+        danger: "bg-black/80 text-red-500 hover:bg-red-950 border border-red-900 hover:border-red-500 shadow-inner",
+        outline: "border border-gray-700 bg-black/50 text-gray-400 hover:text-red-400 hover:border-red-900/50"
+      };
+      return (
+        <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>
+          {children}
+        </button>
+      );
+    };
+
+    const Input = ({ value, onChange, placeholder, type = 'text', className = '', icon: Icon, ...props }) => (
+      <div className={`relative ${className}`}>
+        {Icon && <Icon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />}
+        <input
+          type={type} value={value} onChange={onChange} placeholder={placeholder}
+          className={`w-full bg-[#050505]/80 border border-gray-800 text-gray-200 ${Icon ? 'pl-9' : 'px-4'} py-2.5 rounded-sm focus:outline-none focus:border-red-700 focus:ring-1 focus:ring-red-900/50 shadow-inner font-bold placeholder-gray-700`}
+          {...props}
+        />
+      </div>
+    );
+
+    const Card = ({ children, className = '' }) => (
+      <div className={`bg-[#0a0a0c]/90 backdrop-blur-md border border-red-950/50 rounded-lg p-6 shadow-[0_8px_30px_rgba(0,0,0,0.8)] relative overflow-hidden ${className}`}>
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-900/30 to-transparent"></div>
+        {children}
+      </div>
+    );
+
+    // --- Custom Edit Modal Component ---
+    const EditDialog = ({ dialog, onClose }) => {
+      const [values, setValues] = useState(dialog.fields.reduce((acc, f) => ({...acc, [f.key]: f.defaultValue}), {}));
+
+      return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <Card className="max-w-md w-full border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Edit size={20} className="text-yellow-500"/> {dialog.title}
+            </h3>
+            <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              {dialog.fields.map(f => (
+                <div key={f.key}>
+                  {f.type !== 'checkbox' && <label className="block text-sm text-gray-400 mb-1">{f.label}</label>}
+                  {f.type === 'select' ? (
+                    <select
+                      className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg focus:border-red-500"
+                      value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})}
+                    >
+                      {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  ) : f.type === 'checkbox' ? (
+                    <label className="flex items-center gap-2 cursor-pointer mt-2 mb-2 p-3 border border-gray-700 rounded-lg hover:bg-gray-700/50 bg-gray-900/50">
+                      <input
+                        type="checkbox" checked={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.checked})}
+                        className="w-4 h-4 accent-red-600"
+                      />
+                      <span className="text-gray-300 font-bold">{f.label}</span>
+                    </label>
+                  ) : (
+                    <Input type={f.type || 'text'} value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose}>取消</Button>
+              <Button variant="secondary" onClick={() => { dialog.onSave(values); onClose(); }}>確認儲存</Button>
+            </div>
+          </Card>
+        </div>
+      );
+    };
+
+    // --- Helper Functions ---
+    const copyToClipboard = (text) => {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    };
+
+    const downloadCSV = (content, filename) => {
+      const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' }); // \uFEFF is BOM for Excel
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    };
+
+    const getStockForWarehouse = (ing, wId) => {
+      if (ing.stocks && typeof ing.stocks[wId] !== 'undefined') return ing.stocks[wId];
+      if (wId === 'default') return ing.stock || 0; // Legacy fallback
+      return 0;
+    };
+
+    // --- Main App Component ---
+    function App() {
+      const [firebaseUser, setFirebaseUser] = useState(null);
+      const [isInitializing, setIsInitializing] = useState(true);
+
+      const [appUser, setAppUser] = useState(null); 
+      const [activeTab, setActiveTab] = useState('dashboard');
+
+      const [allData, setAllData] = useState({
+        users: [], roles: [], categories: [], items: [], tags: [],
+        activities: [], orders: [], inventoryLogs: [], ingredients: [],
+        operationLogs: [], settingsData: []
+      });
+      
+      const [dialog, setDialog] = useState(null); 
+
+      const systemConfig = allData.settingsData.find(d => d.id === 'config') || { ignoreAllCosts: false, warehouses: [{ id: 'default', name: '預設主倉庫' }] };
+      const warehouses = systemConfig.warehouses && systemConfig.warehouses.length > 0 ? systemConfig.warehouses : [{ id: 'default', name: '預設主倉庫' }];
+
+      const isGuest = appUser === 'guest';
+      const isLegacyAdmin = !isGuest && appUser?.role === 'admin';
+      const fallbackPerms = isLegacyAdmin ? PERMISSION_LIST.reduce((acc, curr) => ({ ...acc, [curr.id]: true }), {}) : { dashboard: true, pos: true };
+      const userRole = isGuest ? null : allData.roles.find(r => r.id === appUser?.role) || { permissions: fallbackPerms };
+
+      const showConfirm = (message, onConfirm) => setDialog({ type: 'confirm', message, onConfirm });
+      const showAlert = (message) => setDialog({ type: 'alert', message });
+      const showEdit = (config) => setDialog({ type: 'edit', ...config });
+
+      const logAction = async (action, details) => {
+        if (!appUser || isGuest) return;
+        try {
+          await addDoc(getCollRef('bar_operation_logs'), { userName: appUser.name, action, details, timestamp: Date.now() });
+        } catch (e) { console.error("Logging failed", e); }
+      };
+
+      // 結帳處理 (批次寫入 Transaction)
+      const handleCheckout = async (orderData) => {
+        try {
+          const batch = writeBatch(db);
+          
+          const orderRef = doc(getCollRef('bar_orders'));
+          batch.set(orderRef, { ...orderData, timestamp: Date.now() });
+
+          const ingredientDeductions = {};
+          for (const item of orderData.items) {
+            if (item.recipe) {
+              for (const req of item.recipe) {
+                ingredientDeductions[req.ingredientId] = (ingredientDeductions[req.ingredientId] || 0) + (req.qty * item.qty);
+              }
+            }
+          }
+
+          for (const [ingId, consumeQty] of Object.entries(ingredientDeductions)) {
+            const dbIngredient = allData.ingredients.find(ig => ig.id === ingId);
+            if (dbIngredient) {
+              const ingRef = getDocRef('bar_ingredients', ingId);
+              const oldStocks = dbIngredient.stocks || { default: dbIngredient.stock || 0 };
+              const targetWId = orderData.warehouseId || 'default';
+              
+              const newWarehouseStock = (oldStocks[targetWId] || 0) - consumeQty;
+              const newStocks = { ...oldStocks, [targetWId]: newWarehouseStock };
+              const newTotalStock = Object.values(newStocks).reduce((a, b) => a + b, 0);
+
+              batch.update(ingRef, { stocks: newStocks, stock: newTotalStock });
+
+              const invLogRef = doc(getCollRef('bar_inventory'));
+              batch.set(invLogRef, {
+                ingredientId: ingId, ingredientName: dbIngredient.name, changeQty: -consumeQty,
+                reason: `訂單消耗 (${orderData.guestName})`, costPerItem: dbIngredient.cost || 0, 
+                warehouseId: targetWId, timestamp: Date.now()
+              });
+            }
+          }
+          await batch.commit();
+          return true;
+        } catch (error) {
+          console.error("Checkout error:", error);
+          return false;
+        }
+      };
+
+      // 初始化與資料抓取
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+            else await signInAnonymously(auth);
+          } catch (error) { console.error('Auth error:', error); }
+        };
+        initAuth();
+        const unsub = onAuthStateChanged(auth, (user) => { setFirebaseUser(user); setIsInitializing(false); });
+        return () => unsub();
+      }, []);
+
+      useEffect(() => {
+        if (!firebaseUser) return;
+        const unsubscribers = [];
+
+        const subscribe = (collName, key, qObj = null) => {
+          const q = qObj || getCollRef(collName);
+          const unsub = onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAllData(prev => ({ ...prev, [key]: data }));
+          });
+          unsubscribers.push(unsub);
+        };
+
+        subscribe('bar_users', 'users'); subscribe('bar_roles', 'roles');
+        subscribe('bar_categories', 'categories'); subscribe('bar_items', 'items');
+        subscribe('bar_tags', 'tags'); subscribe('bar_activities', 'activities');
+        subscribe('bar_ingredients', 'ingredients'); subscribe('bar_settings', 'settingsData');
+        
+        // 效能優化：限制龐大紀錄的回傳數量
+        subscribe('bar_orders', 'orders', query(getCollRef('bar_orders'), orderBy('timestamp', 'desc'), limit(1500)));
+        subscribe('bar_inventory', 'inventoryLogs', query(getCollRef('bar_inventory'), orderBy('timestamp', 'desc'), limit(1000)));
+        subscribe('bar_operation_logs', 'operationLogs', query(getCollRef('bar_operation_logs'), orderBy('timestamp', 'desc'), limit(300)));
+
+        return () => unsubscribers.forEach(u => u());
+      }, [firebaseUser]);
+
+      // 管理員預設建立
+      useEffect(() => {
+        if (!firebaseUser) return;
+        const timer = setTimeout(async () => {
+          if (allData.roles.length === 0 && allData.users.length === 0) {
+            const allTrue = PERMISSION_LIST.reduce((acc, curr) => ({ ...acc, [curr.id]: true }), {});
+            await setDoc(getDocRef('bar_roles', 'admin_role'), { name: '超級管理員', permissions: allTrue, isSystem: true });
+            await setDoc(getDocRef('bar_users', 'default_admin'), { name: '花大熊', password: 'SAD', role: 'admin_role', isOnline: false, lastActive: Date.now() });
+          }
+        }, 2000);
+        return () => clearTimeout(timer);
+      }, [firebaseUser, allData.roles.length, allData.users.length]);
+
+      // 線上狀態
+      useEffect(() => {
+        if (!appUser || isGuest) return;
+        const updateOnline = async () => { try { await updateDoc(getDocRef('bar_users', appUser.id), { isOnline: true, lastActive: Date.now() }); } catch(e){} };
+        updateOnline();
+        const interval = setInterval(updateOnline, 15000);
+        return () => clearInterval(interval);
+      }, [appUser]);
+
+      const contextValue = useMemo(() => ({
+        ...allData, appUser, isGuest, userRole, systemConfig, warehouses,
+        showAlert, showConfirm, showEdit, logAction, handleCheckout
+      }), [allData, appUser, isGuest, userRole, systemConfig, warehouses]);
+
+
+      if (isInitializing) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-red-500 text-2xl font-bold">SYSTEM BOOTING...</div>;
+
+      if (!appUser) return <LoginScreen users={allData.users} roles={allData.roles} onLogin={setAppUser} onGuest={() => setAppUser('guest')} />;
+
+      const activeUsers = allData.users.filter(u => u.isOnline && (Date.now() - u.lastActive < 30000));
+      const allNavItems = [
+        { id: 'dashboard', label: '儀表板', icon: Home }, { id: 'pos', label: '點餐系統', icon: ShoppingCart },
+        { id: 'orders', label: '記帳歷史', icon: ListOrdered }, { id: 'menu', label: '菜單管理', icon: Utensils },
+        { id: 'inventory', label: '庫存管理', icon: Package }, { id: 'tags', label: '標籤管理', icon: Tags },
+        { id: 'activities', label: '活動優惠', icon: Activity }, { id: 'users', label: '成員管理', icon: Users },
+        { id: 'roles', label: '權限職位', icon: Shield }, { id: 'settings', label: '系統設定', icon: Settings },
+      ];
+
+      const navItems = isGuest ? allNavItems.filter(i => i.id === 'dashboard') : allNavItems.filter(i => userRole.permissions[i.id]);
+      if (!navItems.find(i => i.id === activeTab) && navItems.length > 0) setActiveTab(navItems[0].id);
+
+      const logout = async () => {
+        if (!isGuest) await updateDoc(getDocRef('bar_users', appUser.id), { isOnline: false });
+        setAppUser(null);
+      };
+
+      return (
+        <AppContext.Provider value={contextValue}>
+          <div className="flex flex-col md:flex-row h-screen">
+            
+            {/* Sidebar */}
+            <aside className="w-full md:w-64 bg-black/90 backdrop-blur-md border-b md:border-b-0 md:border-r border-red-950 flex flex-col flex-shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.9)] relative z-10">
+              <div className="absolute inset-0 bg-gradient-to-b from-red-900/10 to-transparent pointer-events-none"></div>
+              <div className="p-6 flex items-center justify-center border-b border-red-950/50">
+                <img src="https://i.meee.com.tw/ncmL8U6.png" alt="LOGO" className="h-24 md:h-32 object-contain drop-shadow-[0_0_20px_rgba(220,38,38,0.6)]" />
+              </div>
+              
+              <div className="p-4 flex-grow overflow-y-auto custom-scrollbar">
+                <nav className="space-y-2">
+                  {navItems.map(item => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id} onClick={() => setActiveTab(item.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm transition-all ${
+                          isActive 
+                            ? 'bg-gradient-to-r from-red-950 to-black text-red-100 font-black shadow-[0_0_15px_rgba(220,38,38,0.2)] border-l-4 border-red-600' 
+                            : 'text-gray-500 hover:bg-red-950/20 hover:text-red-300 border-l-4 border-transparent'
+                        }`}
+                      >
+                        <Icon size={20} className={isActive ? 'text-red-500' : ''} />
+                        <span className="tracking-widest uppercase text-sm">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              <div className="p-4 border-t border-red-950/50 bg-black/60 backdrop-blur-sm">
+                <div className="mb-4">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold flex items-center gap-1"><Zap size={10} className="text-yellow-500"/> ONLINE</p>
+                  <div className="flex flex-wrap gap-2">
+                    {activeUsers.length === 0 ? <span className="text-sm text-gray-700">無人上線</span> : activeUsers.map(u => (
+                      <div key={u.id} className="flex items-center gap-1 bg-black/80 px-2 py-1 rounded border border-gray-800 text-xs shadow-sm">
+                        <div className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_5px_#dc2626]"></div>
+                        <span className={u.role === 'admin_role' ? 'text-red-500 font-bold' : 'text-gray-400'}>{u.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between bg-[#0a0a0c] p-3 rounded-sm border border-red-950/50 shadow-inner group">
+                  <div>
+                    <p className="text-sm font-black text-gray-200 group-hover:text-red-500 tracking-wider">{isGuest ? '遊客模式' : appUser.name}</p>
+                    <p className="text-[10px] text-gray-600 uppercase tracking-widest">{isGuest ? '僅供預覽' : (allData.roles.find(r => r.id === appUser.role)?.name || '未知權限')}</p>
+                  </div>
+                  <button onClick={logout} className="text-gray-600 hover:text-red-500 hover:bg-red-950/50 p-2 rounded-sm transition-colors" title="登出">
+                    <LogOut size={18} />
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="flex-grow flex flex-col h-screen overflow-hidden relative">
+              <header className="bg-black/80 backdrop-blur-md border-b border-red-950/50 p-4 md:px-8 shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex-shrink-0 z-10 flex items-center">
+                <h1 className="text-xl md:text-2xl font-black text-gray-100 tracking-[0.2em] uppercase flex items-center gap-3">
+                  <span className="w-2 h-6 bg-red-700 rounded-sm shadow-[0_0_10px_#dc2626]"></span>
+                  {navItems.find(i => i.id === activeTab)?.label || '系統'}
+                </h1>
+              </header>
+
+              <div className="flex-grow overflow-y-auto p-4 md:p-8 custom-scrollbar relative z-0">
+                <div className="max-w-7xl mx-auto pb-10">
+                  {activeTab === 'dashboard' && <DashboardView />}
+                  {activeTab === 'pos' && <POSView />}
+                  {activeTab === 'orders' && <OrdersView />}
+                  {activeTab === 'menu' && <MenuManager />}
+                  {activeTab === 'inventory' && <InventoryManager />}
+                  {activeTab === 'tags' && <TagsManager />}
+                  {activeTab === 'activities' && <ActivityManager />}
+                  {activeTab === 'users' && <UserManager />}
+                  {activeTab === 'roles' && <RoleManager />}
+                  {activeTab === 'settings' && <SettingsView />}
+                </div>
+              </div>
+            </main>
+
+            {dialog?.type === 'edit' && <EditDialog dialog={dialog} onClose={() => setDialog(null)} />}
+            {dialog && dialog.type !== 'edit' && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <Card className="max-w-sm w-full border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.2)]">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <AlertCircle className="text-red-500"/> {dialog.type === 'confirm' ? '請確認操作' : '系統提示'}
+                  </h3>
+                  <p className="text-gray-300 mb-6 leading-relaxed">{dialog.message}</p>
+                  <div className="flex justify-end gap-3">
+                    {dialog.type === 'confirm' && <Button variant="outline" onClick={() => setDialog(null)}>取消</Button>}
+                    <Button variant="primary" onClick={() => { if (dialog.onConfirm) dialog.onConfirm(); setDialog(null); }}>確定</Button>
+                  </div>
+                </Card>
+              </div>
+            )}
+          </div>
+        </AppContext.Provider>
+      );
+    }
+
+    // ==========================================
+    // VIEWS
+    // ==========================================
+
+    const LoginScreen = ({ users, roles, onLogin, onGuest }) => {
+      const [selectedUser, setSelectedUser] = useState(null);
+      const [password, setPassword] = useState('');
+      const [showPassword, setShowPassword] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleLogin = () => {
+        if (selectedUser.password === password) onLogin(selectedUser);
+        else { setError('密碼錯誤，請重新輸入！'); setPassword(''); }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-40">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-900 rounded-full mix-blend-screen filter blur-[150px] opacity-30"></div>
+          </div>
+
+          <div className="z-10 w-full max-w-md">
+            <div className="text-center mb-10">
+              <img src="https://i.meee.com.tw/ncmL8U6.png" alt="Logo" className="h-56 md:h-72 mx-auto drop-shadow-[0_0_30px_rgba(220,38,38,0.7)] mb-4" />
+            </div>
+
+            <Card className="border-red-950/80 bg-black/80 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.9)]">
+              {!selectedUser ? (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-black text-gray-400 border-b border-red-950/50 pb-3 mb-5 flex items-center gap-2 tracking-widest uppercase">
+                    <Users size={18} className="text-red-600"/> 選擇授權身分
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                    {users.map(u => {
+                      const isTopAdmin = u.role === 'admin_role';
+                      return (
+                        <button
+                          key={u.id} onClick={() => setSelectedUser(u)}
+                          className="p-4 bg-[#0a0a0c] border border-gray-800 rounded-sm hover:border-red-700 hover:bg-red-950/20 flex flex-col items-center justify-center gap-3 group transition-colors shadow-inner"
+                        >
+                          <Shield size={26} className={isTopAdmin ? 'text-red-600 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]' : 'text-gray-600 group-hover:text-red-500'} />
+                          <span className="text-gray-300 font-black text-sm tracking-wider">{u.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {users.length === 0 && <p className="text-gray-600 text-center py-4 text-sm font-bold uppercase tracking-widest">系統初始化中...</p>}
+                  
+                  <div className="mt-8 pt-4 border-t border-gray-900">
+                    <button
+                      onClick={onGuest}
+                      className="w-full py-3 text-xs font-black tracking-[0.3em] text-gray-600 hover:text-red-400 bg-black/50 rounded-sm hover:bg-red-950/20 border border-gray-900 hover:border-red-900 transition-colors"
+                    >
+                      [ 進入遊客預覽模式 ]
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 border-b border-red-950/50 pb-4">
+                    <button onClick={() => { setSelectedUser(null); setError(''); setPassword(''); setShowPassword(false); }} className="text-gray-500 hover:text-red-500 p-2 bg-[#050505] border border-gray-800 rounded-sm hover:bg-red-950/30 transition-colors">
+                      <ChevronLeft size={20} />
+                    </button>
+                    <div>
+                      <h2 className="text-2xl font-black text-white tracking-widest uppercase drop-shadow-md">{selectedUser.name}</h2>
+                      <p className="text-xs text-red-500 font-bold tracking-widest uppercase">{roles.find(r => r.id === selectedUser.role)?.name || '系統身分'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                        className="w-full bg-black border border-red-950 text-red-500 text-center text-3xl tracking-[0.5em] py-5 rounded-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-900/50 shadow-inner font-mono placeholder-gray-800 placeholder:text-base placeholder:tracking-widest"
+                        placeholder="PASSWORD"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-700 hover:text-red-500 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+                      </button>
+                    </div>
+                    {error && <p className="text-red-500 text-xs mt-3 font-black tracking-wider text-center drop-shadow-[0_0_5px_rgba(220,38,38,0.5)]">{error}</p>}
+                  </div>
+
+                  <Button onClick={handleLogin} className="w-full py-4 text-xl tracking-[0.3em] uppercase">
+                    Auth Login
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
+      );
+    };
+
+    const DashboardView = () => {
+      const { orders, inventoryLogs, ingredients, systemConfig, isGuest } = useAppContext();
+      const [period, setPeriod] = useState('month'); 
+      const [refDate, setRefDate] = useState(new Date());
+
+      const lowStockItems = useMemo(() => ingredients.filter(i => (i.stock || 0) <= 5).sort((a,b) => (a.stock||0) - (b.stock||0)), [ingredients]);
+
+      const { startDate, endDate, periodLabel, chartTicks } = useMemo(() => {
+        const d = new Date(refDate);
+        let start, end, label, ticks = [];
+        if (period === 'week') {
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+          start = new Date(d.setDate(diff)); start.setHours(0, 0, 0, 0);
+          end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999);
+          label = `${start.getMonth() + 1}月${start.getDate()}日 - ${end.getMonth() + 1}月${end.getDate()}日`;
+          const weekDays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+          for (let i = 0; i < 7; i++) {
+            const t = new Date(start); t.setDate(start.getDate() + i);
+            ticks.push({ label: weekDays[i], matchStart: t.getTime(), matchEnd: t.getTime() + 86399999 });
+          }
+        } else if (period === 'month') {
+          start = new Date(d.getFullYear(), d.getMonth(), 1);
+          end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+          label = `${d.getFullYear()}年 ${d.getMonth() + 1}月`;
+          const days = end.getDate();
+          for (let i = 1; i <= days; i++) {
+            const t = new Date(d.getFullYear(), d.getMonth(), i);
+            ticks.push({ label: `${i}日`, matchStart: t.getTime(), matchEnd: t.getTime() + 86399999 });
+          }
+        } else {
+          start = new Date(d.getFullYear(), 0, 1);
+          end = new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999);
+          label = `${d.getFullYear()} 年度`;
+          for (let i = 0; i < 12; i++) {
+            const tStart = new Date(d.getFullYear(), i, 1);
+            const tEnd = new Date(d.getFullYear(), i + 1, 0, 23, 59, 59, 999);
+            ticks.push({ label: `${i + 1}月`, matchStart: tStart.getTime(), matchEnd: tEnd.getTime() });
+          }
+        }
+        return { startDate: start, endDate: end, periodLabel: label, chartTicks: ticks };
+      }, [period, refDate]);
+
+      const changeDate = (delta) => {
+        const newD = new Date(refDate);
+        if (period === 'week') newD.setDate(newD.getDate() + delta * 7);
+        if (period === 'month') newD.setMonth(newD.getMonth() + delta);
+        if (period === 'year') newD.setFullYear(newD.getFullYear() + delta);
+        setRefDate(newD);
+      };
+
+      const { stats, chartData, topItems } = useMemo(() => {
+        const sTs = startDate.getTime(), eTs = endDate.getTime();
+        const pOrders = orders.filter(o => o.timestamp >= sTs && o.timestamp <= eTs);
+        const pInv = inventoryLogs.filter(l => l.timestamp >= sTs && l.timestamp <= eTs);
+
+        const revenue = pOrders.reduce((s, o) => s + o.total, 0);
+        const cogs = systemConfig.ignoreAllCosts ? 0 : pOrders.reduce((s, o) => s + (o.totalCost || 0), 0); 
+        const inventoryCost = systemConfig.ignoreAllCosts ? 0 : pInv.filter(l => l.changeQty > 0 && l.reason.includes('進貨')).reduce((s, l) => s + (l.changeQty * (l.costPerItem || 0)), 0);
+
+        const cData = chartTicks.map(tick => {
+          const tOrders = pOrders.filter(o => o.timestamp >= tick.matchStart && o.timestamp <= tick.matchEnd);
+          const tRev = tOrders.reduce((s, o) => s + o.total, 0);
+          const tCogs = systemConfig.ignoreAllCosts ? 0 : tOrders.reduce((s, o) => s + (o.totalCost || 0), 0);
+          return { label: tick.label, revenue: tRev, profit: tRev - tCogs };
+        });
+
+        const iSales = {};
+        pOrders.forEach(o => o.items.forEach(i => {
+          if (!iSales[i.name]) iSales[i.name] = { qty: 0, revenue: 0 };
+          iSales[i.name].qty += i.qty; iSales[i.name].revenue += ((i.price || 0) * i.qty);
+        }));
+        const top = Object.entries(iSales).map(([n, d]) => ({ name: n, ...d })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+
+        return { stats: { revenue, profit: revenue - cogs, inventoryCost, orderCount: pOrders.length }, chartData: cData, topItems: top };
+      }, [startDate, endDate, orders, inventoryLogs, chartTicks, systemConfig.ignoreAllCosts]);
+
+      const maxChart = Math.max(...chartData.map(d => Math.max(d.revenue, d.profit, 1)));
+      const blurClass = isGuest ? "blur-[6px] select-none pointer-events-none opacity-50" : "";
+
+      return (
+        <div className="space-y-6">
+          {isGuest && (
+            <div className="bg-yellow-900/40 border border-yellow-600/50 text-yellow-300 p-4 rounded-xl flex items-center gap-3 font-bold shadow-lg backdrop-blur-md">
+              <AlertCircle size={24} />
+              遊客預覽模式啟動。核心營運數據已啟動最高級別模糊遮罩，請登入專屬授權帳號以解鎖。
+            </div>
+          )}
+
+          {lowStockItems.length > 0 && (
+            <Card className="border-red-600/50 shadow-[0_0_15px_rgba(220,38,38,0.15)] overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 blur-2xl rounded-full"></div>
+              <h2 className="text-lg font-bold text-red-400 mb-4 flex items-center gap-2">
+                <AlertTriangle size={20} /> 庫存低位警報
+              </h2>
+              <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                {lowStockItems.map(ing => (
+                  <div key={ing.id} className="flex-shrink-0 bg-red-950/40 border border-red-900/50 rounded-lg px-4 py-2 flex flex-col items-center justify-center min-w-[100px]">
+                    <span className="text-gray-300 text-sm font-bold mb-1">{ing.name}</span>
+                    <span className={`text-2xl font-black ${ing.stock <= 0 ? 'text-red-500' : 'text-yellow-500'}`}>{ing.stock || 0}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <div className="flex flex-col md:flex-row justify-between items-center bg-gray-800/80 p-2 md:p-4 rounded-xl border border-gray-700 shadow-lg gap-4 backdrop-blur-sm">
+            <div className="flex bg-gray-900/80 rounded-lg p-1 w-full md:w-auto">
+              {['week', 'month', 'year'].map(p => (
+                <button
+                  key={p} onClick={() => setPeriod(p)}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-bold ${period === p ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'}`}
+                >
+                  {p === 'week' ? '單週' : p === 'month' ? '單月' : '年度'}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-4 bg-gray-900/50 px-4 py-2 rounded-lg border border-gray-700/50">
+              <button onClick={() => changeDate(-1)} className="p-1 hover:text-red-500"><ChevronLeft size={20} /></button>
+              <div className="flex items-center gap-2 text-lg font-bold text-white min-w-[150px] justify-center tracking-wider">
+                <Calendar size={18} className="text-red-500" /> {periodLabel}
+              </div>
+              <button onClick={() => changeDate(1)} className="p-1 hover:text-red-500"><ChevronRight size={20} /></button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { label: '期間營收', val: stats.revenue, icon: DollarSign, color: 'text-white', border: 'border-t-blue-500', shadow: 'shadow-blue-900/20' },
+              { label: '實質淨利', val: stats.profit, icon: TrendingUp, color: 'text-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]', border: 'border-t-yellow-500', shadow: 'shadow-yellow-900/20' },
+              { label: '訂單總數', val: stats.orderCount, icon: ListOrdered, color: 'text-white', border: 'border-t-green-500', shadow: 'shadow-green-900/20', isNum: true },
+              { label: '進貨花費', val: stats.inventoryCost, icon: Package, color: 'text-gray-300', border: 'border-t-gray-500', shadow: 'shadow-gray-900/20' }
+            ].map((card, idx) => (
+              <Card key={idx} className={`flex flex-col border-t-4 ${card.border} ${card.shadow} p-5 relative overflow-hidden`}>
+                <p className="text-gray-400 text-xs md:text-sm mb-2 flex items-center gap-2 font-bold uppercase tracking-wider"><card.icon size={16} className={card.color.includes('yellow') ? 'text-yellow-500' : ''}/> {card.label}</p>
+                <h3 className={`text-2xl md:text-3xl font-black ${card.color} ${!card.isNum ? blurClass : ''}`}>
+                  {!card.isNum && '$'}{card.val.toLocaleString()} {card.isNum && <span className="text-sm text-gray-500 font-normal">單</span>}
+                </h3>
+                {isGuest && !card.isNum && <div className="absolute inset-0 flex items-center justify-center text-gray-500/50 font-black rotate-[-15deg] tracking-[0.5em] text-xl pointer-events-none">CLASSIFIED</div>}
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2 bg-gradient-to-br from-gray-800/90 to-gray-900/90 relative overflow-hidden border-gray-700/50">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2"><BarChart2 size={20} className="text-red-500"/> 營收與淨利走勢</h2>
+                <div className="flex gap-4 text-xs font-bold">
+                  <span className="flex items-center gap-1 text-gray-300"><span className="w-3 h-3 rounded bg-blue-500/80"></span> 總營收</span>
+                  <span className="flex items-center gap-1 text-gray-300"><span className="w-3 h-3 rounded bg-yellow-500 shadow-[0_0_8px_#eab308]"></span> 淨利</span>
+                </div>
+              </div>
+              
+              <div className={`w-full h-[280px] flex items-end gap-[2px] sm:gap-1 relative pt-6 pb-6 border-b border-gray-700 ${blurClass}`}>
+                {[25, 50, 75].map(pct => (
+                  <div key={pct} className="absolute w-full border-b border-gray-700/30 border-dashed z-0" style={{ bottom: `${pct}%` }}></div>
+                ))}
+
+                {chartData.map((d, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col justify-end items-center group relative h-full z-10 cursor-crosshair">
+                    <div className="absolute bottom-full mb-3 hidden group-hover:block bg-gray-900/95 border border-gray-600 text-xs p-3 rounded-lg shadow-2xl backdrop-blur-md pointer-events-none whitespace-nowrap">
+                      <div className="font-bold text-gray-200 mb-1 border-b border-gray-700 pb-1">{d.label}</div>
+                      <div className="text-blue-400 font-mono">Rev: ${Math.round(d.revenue).toLocaleString()}</div>
+                      <div className="text-yellow-400 font-mono">Net: ${Math.round(d.profit).toLocaleString()}</div>
+                    </div>
+                    
+                    <div className="w-full max-w-[20px] flex flex-col justify-end h-full relative">
+                      <div className="absolute bottom-0 w-full bg-blue-500/60 rounded-t-sm group-hover:brightness-125" style={{ height: `${(d.revenue / maxChart) * 100}%`, minHeight: d.revenue > 0 ? '4px' : '0' }}></div>
+                      <div className="absolute bottom-0 w-full bg-yellow-500 rounded-t-sm shadow-[0_0_8px_rgba(234,179,8,0.5)] group-hover:brightness-125 group-hover:shadow-[0_0_15px_rgba(234,179,8,0.8)]" style={{ height: `${(d.profit / maxChart) * 100}%`, minHeight: d.profit > 0 ? '4px' : '0' }}></div>
+                    </div>
+                    <div className="text-[9px] sm:text-[10px] text-gray-500 mt-2 truncate w-full text-center group-hover:text-white">
+                      {period === 'month' ? d.label.replace('日', '') : d.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {isGuest && <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <span className="bg-red-900/80 text-red-100 px-6 py-2 rounded-full border border-red-500 font-black tracking-widest backdrop-blur-md shadow-[0_0_20px_#dc2626]">DATA CLASSIFIED</span>
+              </div>}
+            </Card>
+
+            <Card className="lg:col-span-1 border border-gray-700/50">
+              <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><Trophy size={20} className="text-yellow-500"/> 熱銷排行榜 TOP 5</h2>
+              <div className="space-y-3">
+                {topItems.length === 0 ? <p className="text-gray-500 text-center py-10 font-bold">尚無銷售紀錄</p> : 
+                  topItems.map((item, index) => (
+                    <div key={item.name} className="flex items-center gap-3 bg-gray-900/50 p-3 rounded-xl border border-gray-800/80 hover:border-gray-600">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shadow-inner ${
+                        index === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-gray-900 shadow-[0_0_15px_rgba(234,179,8,0.4)]' :
+                        index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-gray-900' :
+                        index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white' : 'bg-gray-800 text-gray-500'
+                      }`}>{index + 1}</div>
+                      <div className="flex-grow min-w-0">
+                        <p className="font-bold text-gray-200 truncate">{item.name}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{item.qty} UNITS SOLD</p>
+                      </div>
+                      <div className={`text-right font-black text-red-400 ${blurClass} font-mono`}>
+                        ${item.revenue.toLocaleString()}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </Card>
+          </div>
+        </div>
+      );
+    };
+
+    const POSView = () => {
+      const { items, categories, activities, ingredients, warehouses, handleCheckout, showAlert, logAction, systemConfig } = useAppContext();
+      const [cart, setCart] = useState([]);
+      const [guestName, setGuestName] = useState('');
+      const [selectedCategoryId, setSelectedCategoryId] = useState('all');
+      const [selectedActivityId, setSelectedActivityId] = useState('none');
+      const [selectedWarehouseId, setSelectedWarehouseId] = useState(warehouses[0]?.id || 'default');
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [searchQuery, setSearchQuery] = useState('');
+
+      const activeActs = useMemo(() => {
+        const now = new Date().toISOString();
+        return activities.filter(a => a.isActive && a.startTime <= now && a.endTime >= now);
+      }, [activities]);
+
+      const updateCart = (item, delta = 1) => {
+        setCart(prev => {
+          const exist = prev.find(i => i.id === item.id);
+          if (exist) return prev.map(i => i.id === item.id ? { ...i, qty: Math.max(0, i.qty + delta) } : i).filter(i => i.qty > 0);
+          return delta > 0 ? [...prev, { ...item, qty: 1 }] : prev;
+        });
+      };
+
+      const cartTotals = useMemo(() => {
+        const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+        const totalCost = systemConfig.ignoreAllCosts ? 0 : cart.reduce((s, cItem) => {
+          let iCost = cItem.recipe ? cItem.recipe.reduce((c, req) => {
+            const ig = ingredients.find(i => i.id === req.ingredientId);
+            return c + (!ig || ig.ignoreCost ? 0 : (ig.cost || 0) * req.qty);
+          }, 0) : 0;
+          return s + (iCost * cItem.qty);
+        }, 0);
+        
+        let discount = 0;
+        const act = activeActs.find(a => a.id === selectedActivityId);
+        if (act) discount = act.type === 'percent' ? subtotal * (1 - act.value / 100) : act.value;
+        
+        const total = Math.max(0, subtotal - discount);
+        return { subtotal, discount, total, totalCost, profit: total - totalCost };
+      }, [cart, selectedActivityId, activeActs, systemConfig.ignoreAllCosts, ingredients]);
+
+      const displayItems = useMemo(() => {
+        let filtered = items;
+        if (selectedCategoryId !== 'all') filtered = filtered.filter(i => i.categoryId === selectedCategoryId);
+        if (searchQuery.trim()) filtered = filtered.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        return filtered.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      }, [items, selectedCategoryId, searchQuery]);
+
+      const cartUsage = useMemo(() => {
+        const usage = {};
+        cart.forEach(c => c.recipe?.forEach(req => usage[req.ingredientId] = (usage[req.ingredientId] || 0) + (req.qty * c.qty)));
+        return usage;
+      }, [cart]);
+
+      const getMakableQty = (item) => {
+        if (!item.recipe?.length) return null; 
+        let minQty = Infinity;
+        for (const req of item.recipe) {
+          const ing = ingredients.find(ig => ig.id === req.ingredientId);
+          if (!ing) return 0; 
+          const wStock = getStockForWarehouse(ing, selectedWarehouseId);
+          const avail = wStock - (cartUsage[req.ingredientId] || 0);
+          minQty = Math.min(minQty, Math.floor(Math.max(0, avail) / req.qty));
+        }
+        return minQty === Infinity ? 0 : minQty;
+      };
+
+      const processOrder = async () => {
+        if (!guestName.trim()) return showAlert("請輸入客人名稱或桌號");
+        if (cart.length === 0) return;
+        setIsProcessing(true);
+        const success = await handleCheckout({
+          guestName, items: cart, ...cartTotals, warehouseId: selectedWarehouseId, activityId: selectedActivityId !== 'none' ? selectedActivityId : null
+        });
+        if (success) {
+          const whName = warehouses.find(w => w.id === selectedWarehouseId)?.name || '未知倉庫';
+          logAction('新增點餐', `桌號/客人: ${guestName}, 金額: $${Math.round(cartTotals.total)} (來自: ${whName})`);
+          setCart([]); setGuestName(''); setSelectedActivityId('none');
+        } else showAlert("結帳失敗，請重試");
+        setIsProcessing(false);
+      };
+
+      return (
+        <div className="flex flex-col gap-6 h-full min-h-[calc(100vh-140px)]">
+          
+          {/* 上方：點餐明細區塊 */}
+          <Card className="w-full flex-shrink-0 flex flex-col p-5 border-red-900/30 shadow-xl h-auto max-h-[45vh]">
+            <div className="flex justify-between items-center mb-4 border-b border-gray-700/50 pb-3">
+              <h2 className="text-xl font-black text-white flex items-center gap-2"><ShoppingCart size={20} className="text-red-500"/> 點餐明細</h2>
+              <div className="flex items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-700 shadow-inner">
+                <Warehouse size={16} className="text-gray-400" />
+                <select value={selectedWarehouseId} onChange={e=>setSelectedWarehouseId(e.target.value)} className="bg-transparent text-white font-bold text-sm focus:outline-none">
+                  {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex flex-col lg:flex-row gap-4 h-full overflow-hidden">
+              {/* 左側：購物車列表 */}
+              <div className="flex-grow flex flex-col h-full min-h-[150px]">
+                 <div className="mb-3">
+                  <Input value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="客人名稱 / 桌號 *" className="w-full sm:w-64 font-bold" />
+                </div>
+                <div className="flex-grow overflow-y-auto bg-black/40 rounded-xl p-2 space-y-2 custom-scrollbar border border-gray-800 shadow-inner">
+                  {cart.length === 0 ? <p className="text-gray-600 text-center py-6 font-bold text-sm">購物車是空的</p> : 
+                    cart.map(item => (
+                      <div key={item.id} className="flex justify-between items-center bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/50 shadow-sm">
+                        <div className="flex-grow pr-2 min-w-0">
+                          <p className="text-sm font-bold text-gray-200 truncate">{item.name}</p>
+                          <p className="text-xs text-red-400 font-mono">${item.price}</p>
+                        </div>
+                        <div className="flex items-center gap-3 bg-gray-900/80 rounded-md p-1 border border-gray-700/50 flex-shrink-0">
+                          <button onClick={() => updateCart(item, -1)} className="w-7 h-7 bg-gray-800 rounded hover:bg-gray-700 text-white flex items-center justify-center">-</button>
+                          <span className="w-4 text-center text-sm font-bold">{item.qty}</span>
+                          <button onClick={() => updateCart(item, 1)} className="w-7 h-7 bg-red-600/90 rounded hover:bg-red-500 text-white flex items-center justify-center shadow-sm">+</button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* 右側：結帳資訊 */}
+              <div className="w-full lg:w-72 flex-shrink-0 flex flex-col bg-gray-900/50 p-4 rounded-xl border border-gray-700/80 overflow-hidden">
+                {/* 所需材料區塊 */}
+                <div className="flex-grow overflow-y-auto mb-4 custom-scrollbar bg-gray-950/30 rounded-lg p-2 border border-gray-800/50 shadow-inner">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1 border-b border-gray-800 pb-2">
+                    <Package size={14} className="text-yellow-500"/> 訂單所需材料預估
+                  </h4>
+                  {Object.keys(cartUsage).length === 0 ? (
+                    <p className="text-xs text-gray-600 text-center py-4 font-bold">目前無材料消耗紀錄</p>
+                  ) : (
+                    <div className="space-y-1.5 pr-1">
+                      {Object.entries(cartUsage).map(([ingId, qty]) => {
+                        const ing = ingredients.find(i => i.id === ingId);
+                        const wStock = getStockForWarehouse(ing || {}, selectedWarehouseId);
+                        const isShort = wStock < qty;
+                        return (
+                          <div key={ingId} className="flex justify-between items-center text-xs bg-gray-800/80 px-2 py-1.5 rounded border border-gray-700/50 shadow-sm">
+                            <span className="text-gray-300 truncate pr-2">{ing?.name || '未知'}</span>
+                            <span className={`font-mono font-bold flex-shrink-0 flex items-center gap-1 ${isShort ? 'text-red-400' : 'text-yellow-400'}`}>
+                              {qty} 單位 {isShort && <span className="text-[10px] bg-red-950/80 text-red-500 border border-red-900/50 px-1 rounded shadow-sm">缺</span>}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-gray-700/80 flex-shrink-0">
+                  <div className="flex justify-between text-gray-400 text-sm font-mono"><span>Subtotal</span><span>${cartTotals.subtotal}</span></div>
+                  <select value={selectedActivityId} onChange={e=>setSelectedActivityId(e.target.value)} className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:border-red-500">
+                    <option value="none">無活動折扣</option>
+                    {activeActs.map(a => <option key={a.id} value={a.id}>{a.name} ({a.type==='percent'?`${a.value}%`:`-$${a.value}`})</option>)}
+                  </select>
+                  {cartTotals.discount > 0 && <div className="flex justify-between text-yellow-400 text-sm font-bold font-mono pt-1"><span>Discount</span><span>-${Math.round(cartTotals.discount)}</span></div>}
+                  
+                  <div className="flex justify-between items-end pt-2 border-t border-gray-700/80 mt-2">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider text-sm mb-1">Total</span>
+                    <span className="text-4xl font-black text-red-500 font-mono">${Math.round(cartTotals.total)}</span>
+                  </div>
+
+                  <Button onClick={processOrder} disabled={cart.length===0 || !guestName.trim() || isProcessing} className="w-full py-3 mt-3 text-lg shadow-lg">
+                    {isProcessing ? 'PROCESSING...' : '確認送單'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* 下方：菜單區域 */}
+          <Card className="flex-grow flex flex-col p-0 overflow-hidden border-gray-700/50">
+            <div className="flex flex-col sm:flex-row justify-between p-4 bg-gray-900/60 border-b border-gray-800/80 gap-4 backdrop-blur-md z-10 flex-shrink-0">
+              <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1 custom-scrollbar">
+                <button onClick={() => setSelectedCategoryId('all')} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedCategoryId === 'all' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>全部</button>
+                {[...categories].sort((a,b)=>a.sortOrder-b.sortOrder).map(c => (
+                  <button key={c.id} onClick={() => setSelectedCategoryId(c.id)} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedCategoryId === c.id ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>{c.name}</button>
+                ))}
+              </div>
+              <Input icon={Search} placeholder="搜尋菜單..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="w-full sm:w-64 flex-shrink-0" />
+            </div>
+
+            <div className="flex-grow overflow-y-auto p-4 custom-scrollbar bg-gray-950/30">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
+                {displayItems.map(item => {
+                  const mkQty = getMakableQty(item);
+                  const outOfStock = mkQty !== null && mkQty <= 0;
+                  return (
+                    <button
+                      key={item.id} onClick={() => updateCart(item, 1)}
+                      className={`bg-gray-800 relative rounded-xl text-left overflow-hidden flex flex-col min-h-[130px] border ${
+                        outOfStock ? 'border-red-900/50 opacity-60 cursor-not-allowed' : 'border-gray-700 hover:border-red-500'
+                      }`}
+                    >
+                      {/* Item Image Display */}
+                      {item.imageUrl && (
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none" 
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                      )}
+                      {item.imageUrl && <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-gray-900/20 pointer-events-none"></div>}
+
+                      {/* Price Top Right */}
+                      <div className={`absolute top-0 right-0 text-white text-xs font-black px-3 py-1 rounded-bl-xl shadow-md z-10 ${outOfStock ? 'bg-gray-600' : 'bg-red-600'}`}>
+                        ${item.price}
+                      </div>
+                      
+                      {/* Name and Qty Layout */}
+                      <div className="relative z-10 p-3 flex flex-col h-full justify-between w-full">
+                        <h3 className="font-bold text-gray-100 pr-10 text-base lg:text-lg leading-tight drop-shadow-md">{item.name}</h3>
+                        
+                        {/* Makable Qty Bottom Left */}
+                        <div className="mt-3">
+                          {mkQty !== null ? (
+                            <div className={`text-xs font-bold px-2 py-1 rounded w-fit drop-shadow-md border ${outOfStock ? 'bg-red-950/80 text-red-400 border-red-900/50' : 'bg-gray-900/80 text-green-400 border-gray-700/50'}`}>
+                              {outOfStock ? '庫存耗盡' : `可製作: ${mkQty} 份`}
+                            </div>
+                          ) : <div className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest drop-shadow-md bg-gray-900/80 border border-gray-700/50 px-2 py-1 rounded w-fit">無數量限制</div>}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    };
+
+    const OrdersView = () => {
+      const { orders, warehouses, showAlert } = useAppContext();
+
+      const handleCopyBill = (o) => {
+        const whName = warehouses.find(w => w.id === o.warehouseId)?.name || '未指定倉庫';
+        const text = `=== 鐵騎酒吧 帳單 ===\n時間: ${new Date(o.timestamp).toLocaleString()}\n桌號/客人: ${o.guestName}\n出餐庫存: ${whName}\n-------------------\n${o.items.map(i=>`${i.name} x${i.qty}  $${i.price*i.qty}`).join('\n')}\n-------------------\n小計: $${o.subtotal}\n折扣: -$${Math.round(o.discountAmount || 0)}\n總計: $${Math.round(o.total)}\n===================`;
+        copyToClipboard(text);
+        showAlert("📝 帳單文字已成功複製到剪貼簿！");
+      };
+
+      return (
+        <Card>
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><ListOrdered className="text-blue-500"/> 記帳歷史紀錄</h2>
+          <div className="overflow-x-auto custom-scrollbar border border-gray-700/50 rounded-xl">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-900/80 border-b border-gray-700">
+                  <th className="p-4 text-gray-400 font-bold text-sm">時間</th>
+                  <th className="p-4 text-gray-400 font-bold text-sm">桌號/客人</th>
+                  <th className="p-4 text-gray-400 font-bold text-sm">明細</th>
+                  <th className="p-4 text-gray-400 font-bold text-sm text-right">小計</th>
+                  <th className="p-4 text-yellow-500/80 font-bold text-sm text-right">折扣</th>
+                  <th className="p-4 text-red-400 font-bold text-sm text-right">實收</th>
+                  <th className="p-4 text-gray-400 font-bold text-sm text-center">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/60 bg-gray-800/30">
+                {orders.map(o => (
+                  <tr key={o.id} className="hover:bg-gray-700/30">
+                    <td className="p-4 text-sm text-gray-400 font-mono">{new Date(o.timestamp).toLocaleString()}</td>
+                    <td className="p-4 font-bold text-gray-200">
+                      {o.guestName}
+                      {o.warehouseId && <div className="text-[10px] text-gray-500 mt-1"><Warehouse size={10} className="inline mr-1"/>{warehouses.find(w=>w.id===o.warehouseId)?.name || '未知'}</div>}
+                    </td>
+                    <td className="p-4 text-sm text-gray-400 max-w-xs truncate" title={o.items.map(i=>`${i.name}x${i.qty}`).join(', ')}>{o.items.map(i => `${i.name}x${i.qty}`).join(', ')}</td>
+                    <td className="p-4 text-right text-gray-400 font-mono">${o.subtotal}</td>
+                    <td className="p-4 text-right text-yellow-500/80 font-mono">-{Math.round(o.discountAmount || 0)}</td>
+                    <td className="p-4 text-right font-black text-red-400 font-mono">${Math.round(o.total)}</td>
+                    <td className="p-4 text-center">
+                      <button onClick={() => handleCopyBill(o)} className="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-gray-700/50" title="複製帳單">
+                        <Copy size={16}/>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {orders.length === 0 && <tr><td colSpan="7" className="text-center p-10 text-gray-500 font-bold">尚無訂單紀錄</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      );
+    };
+
+    const MenuManager = () => {
+      const { categories, items, ingredients, showAlert, showConfirm, showEdit, logAction, systemConfig } = useAppContext();
+      const [activeTab, setActiveTab] = useState('items'); 
+      const [searchQuery, setSearchQuery] = useState('');
+      
+      const [catName, setCatName] = useState('');
+      const [itemData, setItemData] = useState({ name: '', price: '', cat: '', recipe: [], imageUrl: '' });
+      const [ingSelection, setIngSelection] = useState({ id: '', qty: '' });
+      const [editingItemId, setEditingItemId] = useState(null);
+
+      const sortedCats = [...categories].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      const sortedItems = [...items].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const handleAction = async (action, logMsg) => {
+        await action();
+        if (logMsg) logAction(logMsg.split(':')[0], logMsg);
+      };
+
+      const addCat = () => {
+        if (!catName.trim()) return;
+        handleAction(async () => { await addDoc(getCollRef('bar_categories'), { name: catName, sortOrder: categories.length }); setCatName(''); }, `新增分類: ${catName}`);
+      };
+
+      const editCat = (cat) => showEdit({
+        title: '編輯分類', fields: [{ key: 'name', label: '名稱', defaultValue: cat.name }],
+        onSave: (v) => { if (v.name) handleAction(() => updateDoc(getDocRef('bar_categories', cat.id), { name: v.name }), `編輯分類: ${v.name}`); }
+      });
+
+      const delCat = (id, name) => showConfirm('確定刪除分類？', () => handleAction(() => deleteDoc(getDocRef('bar_categories', id)), `刪除分類: ${name}`));
+
+      const saveItem = () => {
+        if (!itemData.name || !itemData.price || !itemData.cat) return showAlert('填寫完整資訊 (分類、名稱、價格)');
+        handleAction(async () => {
+          const payload = {
+            name: itemData.name, price: Number(itemData.price), categoryId: itemData.cat, 
+            recipe: itemData.recipe, imageUrl: itemData.imageUrl || '' 
+          };
+          if (editingItemId) {
+            await updateDoc(getDocRef('bar_items', editingItemId), payload);
+          } else {
+            await addDoc(getCollRef('bar_items'), { ...payload, sortOrder: items.length });
+          }
+          setItemData({ name: '', price: '', cat: '', recipe: [], imageUrl: '' });
+          setEditingItemId(null);
+        }, `${editingItemId ? '編輯' : '新增'}品項: ${itemData.name}`);
+      };
+
+      const startEditItem = (item) => {
+        setItemData({
+          name: item.name, price: item.price, cat: item.categoryId,
+          recipe: item.recipe || [], imageUrl: item.imageUrl || ''
+        });
+        setEditingItemId(item.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      const cancelEdit = () => {
+        setItemData({ name: '', price: '', cat: '', recipe: [], imageUrl: '' });
+        setEditingItemId(null);
+      };
+
+      const delItem = (id, name) => showConfirm('確定刪除品項？', () => handleAction(() => deleteDoc(getDocRef('bar_items', id)), `刪除品項: ${name}`));
+
+      const reorder = async (collectionStr, list) => {
+        list.forEach((item, idx) => { if(item.sortOrder !== idx) updateDoc(getDocRef(collectionStr, item.id), { sortOrder: idx }); });
+      };
+
+      return (
+        <Card className="max-w-5xl mx-auto">
+          <div className="flex border-b border-gray-700/50 mb-6">
+            <button onClick={() => setActiveTab('items')} className={`px-6 py-3 font-bold border-b-2 ${activeTab === 'items' ? 'border-red-500 text-red-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>品項與配方管理</button>
+            <button onClick={() => setActiveTab('categories')} className={`px-6 py-3 font-bold border-b-2 ${activeTab === 'categories' ? 'border-red-500 text-red-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>大分類管理</button>
+          </div>
+
+          {activeTab === 'categories' && (
+            <div>
+              <div className="flex gap-3 mb-6 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                <Input value={catName} onChange={e=>setCatName(e.target.value)} placeholder="新分類名稱" className="flex-grow" />
+                <Button onClick={addCat}><Plus size={18}/> 新增分類</Button>
+              </div>
+              <DraggableList items={sortedCats} onReorder={(l) => reorder('bar_categories', l)} renderItem={cat => (
+                <div className="flex justify-between items-center w-full group">
+                  <span className="font-bold text-white group-hover:text-red-400">{cat.name}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => editCat(cat)} className="text-gray-500 hover:text-yellow-500 p-2 bg-gray-900 rounded"><Edit size={16}/></button>
+                    <button onClick={() => delCat(cat.id, cat.name)} className="text-gray-500 hover:text-red-500 p-2 bg-gray-900 rounded"><Trash2 size={16}/></button>
+                  </div>
+                </div>
+              )}/>
+            </div>
+          )}
+
+          {activeTab === 'items' && (
+            <div>
+              <div className={`p-5 rounded-xl border mb-6 shadow-inner transition-colors ${editingItemId ? 'bg-yellow-900/20 border-yellow-700/50' : 'bg-gray-900/50 border-gray-800'}`}>
+                <h3 className={`text-sm font-bold mb-3 flex items-center gap-2 ${editingItemId ? 'text-yellow-500' : 'text-gray-400'}`}>
+                  {editingItemId ? <Edit size={16}/> : <Plus size={16}/>} 
+                  {editingItemId ? `正在編輯：${itemData.name}` : '新增品項與配方設定'}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <select value={itemData.cat} onChange={e=>setItemData({...itemData, cat: e.target.value})} className="bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:border-red-500">
+                    <option value="" disabled>選擇分類...</option>
+                    {sortedCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <Input value={itemData.name} onChange={e=>setItemData({...itemData, name: e.target.value})} placeholder="品項名稱 *" className="md:col-span-2" />
+                  <Input type="number" value={itemData.price} onChange={e=>setItemData({...itemData, price: e.target.value})} placeholder="售價 $ *" />
+                  <Input value={itemData.imageUrl} onChange={e=>setItemData({...itemData, imageUrl: e.target.value})} placeholder="餐點圖片網址 URL (選填，可留空)" icon={ImageIcon} className="md:col-span-4" />
+                </div>
+                
+                <div className="border-t border-gray-700/50 pt-4 bg-gray-950/30 p-4 rounded-lg">
+                  <h4 className="text-xs font-bold text-yellow-500/80 mb-3 uppercase tracking-wider">綁定出餐扣除的食材庫存</h4>
+                  <div className="flex flex-wrap md:flex-nowrap gap-3 mb-3">
+                    <select value={ingSelection.id} onChange={e=>setIngSelection({...ingSelection, id: e.target.value})} className="flex-grow bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm">
+                      <option value="" disabled>選擇庫存食材...</option>
+                      {ingredients.map(ig => <option key={ig.id} value={ig.id}>{ig.name} (本:${ig.cost})</option>)}
+                    </select>
+                    <Input type="number" value={ingSelection.qty} onChange={e=>setIngSelection({...ingSelection, qty: e.target.value})} placeholder="單次用量" className="w-24" />
+                    <Button variant="outline" onClick={() => {
+                      if(!ingSelection.id || !ingSelection.qty) return;
+                      const ing = ingredients.find(i=>i.id===ingSelection.id);
+                      setItemData(p => ({...p, recipe: [...p.recipe, { ingredientId: ing.id, name: ing.name, qty: Number(ingSelection.qty) }]}));
+                      setIngSelection({id:'', qty:''});
+                    }}>加入配方</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {itemData.recipe.map((r, i) => (
+                      <div key={i} className="bg-gray-800/80 border border-gray-600 rounded-md px-3 py-1 text-sm flex items-center gap-2 shadow-sm">
+                        <span className="text-gray-200">{r.name} <span className="text-red-400 font-bold">x{r.qty}</span></span>
+                        <button onClick={() => setItemData(p => ({...p, recipe: p.recipe.filter((_, idx)=>idx!==i)}))} className="text-gray-500 hover:text-red-400"><X size={14}/></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  {editingItemId && <Button variant="outline" onClick={cancelEdit}>取消編輯</Button>}
+                  <Button variant={editingItemId ? 'secondary' : 'primary'} onClick={saveItem} className="px-8">
+                    {editingItemId ? '儲存配方更新' : '建立新菜單'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end mb-4">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">拖曳左側可排序</h3>
+                <Input icon={Search} placeholder="搜尋現有品項..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="w-64" />
+              </div>
+              
+              <DraggableList items={sortedItems} onReorder={(l) => reorder('bar_items', l)} renderItem={item => {
+                const cost = item.recipe && !systemConfig.ignoreAllCosts ? item.recipe.reduce((s, r) => s + ((ingredients.find(i=>i.id===r.ingredientId)?.cost||0) * r.qty), 0) : 0;
+                return (
+                  <div className={`flex justify-between items-center w-full group ${editingItemId === item.id ? 'opacity-50' : ''}`}>
+                    <div className="min-w-0 pr-4 flex items-center gap-3">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt="" className="w-10 h-10 rounded object-cover border border-gray-600 bg-gray-800" onError={(e)=>e.target.style.display='none'}/>
+                      ) : <div className="w-10 h-10 rounded bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-600"><ImageIcon size={18}/></div>}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-white text-lg truncate group-hover:text-red-400">{item.name}</span>
+                          <span className="text-[10px] bg-gray-700/80 text-gray-300 px-2 py-0.5 rounded-full border border-gray-600 truncate">{categories.find(c=>c.id===item.categoryId)?.name || '未分類'}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {item.recipe?.length > 0 ? item.recipe.map(r=>`${r.name}x${r.qty}`).join(' | ') : <span className="text-yellow-700 font-bold">無綁定配方</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 md:gap-5 text-sm flex-shrink-0">
+                      <div className="text-right font-mono">
+                        <p className="text-white font-bold">${item.price}</p>
+                        <p className="text-red-400/80 text-xs text-right">本:${cost}</p>
+                      </div>
+                      <div className="flex gap-1 border-l border-gray-700/50 pl-3">
+                        <button onClick={() => startEditItem(item)} className="text-gray-500 hover:text-yellow-500 p-2 bg-gray-900 rounded"><Edit size={16}/></button>
+                        <button onClick={() => delItem(item.id, item.name)} className="text-gray-500 hover:text-red-500 p-2 bg-gray-900 rounded"><Trash2 size={16}/></button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}/>
+            </div>
+          )}
+        </Card>
+      );
+    };
+
+    const DraggableList = ({ items, onReorder, renderItem }) => {
+      const [draggedIdx, setDraggedIdx] = useState(null);
+      const handleDrag = (e, idx, type) => {
+        if(type === 'start') { setDraggedIdx(idx); e.dataTransfer.effectAllowed='move'; }
+        if(type === 'enter' && draggedIdx !== null && draggedIdx !== idx) {
+          const newItems = [...items];
+          newItems.splice(idx, 0, newItems.splice(draggedIdx, 1)[0]);
+          setDraggedIdx(idx); onReorder(newItems);
+        }
+        if(type === 'end') setDraggedIdx(null);
+      };
+      return <div className="space-y-2">{items.map((item, i) => (
+        <div key={item.id} draggable onDragStart={e=>handleDrag(e,i,'start')} onDragEnter={e=>handleDrag(e,i,'enter')} onDragEnd={e=>handleDrag(e,i,'end')} onDragOver={e=>e.preventDefault()} className="flex items-stretch bg-gray-800/80 border border-gray-700/50 rounded-xl group hover:border-gray-500/50 shadow-sm">
+          <div className="px-3 flex items-center bg-gray-900/50 border-r border-gray-700/50 cursor-grab active:cursor-grabbing text-gray-600 hover:text-red-400 rounded-l-xl"><GripVertical size={18}/></div>
+          <div className="flex-grow p-4 min-w-0">{renderItem(item)}</div>
+        </div>
+      ))}</div>;
+    };
+
+    const InventoryManager = () => {
+      const { ingredients, items, warehouses, showAlert, showEdit, logAction, systemConfig } = useAppContext();
+      const [activeTab, setActiveTab] = useState('inventory'); 
+      
+      const [newIng, setNewIng] = useState({ name: '', cost: '', ignore: false });
+      const [stockOp, setStockOp] = useState({ id: '', qty: '', totalSpent: '', reason: '一般進貨', warehouseId: warehouses[0]?.id || 'default' });
+      
+      const [calcItem, setCalcItem] = useState('');
+      const [calcPortions, setCalcPortions] = useState(10);
+
+      const addIng = async () => {
+        if (!newIng.name || !newIng.cost) return showAlert("請填寫食材名稱與基礎成本");
+        await addDoc(getCollRef('bar_ingredients'), { name: newIng.name, stock: 0, cost: Number(newIng.cost), ignoreCost: newIng.ignore });
+        logAction('新增食材', `新增: ${newIng.name}`);
+        setNewIng({ name: '', cost: '', ignore: false });
+      };
+
+      const addStock = async () => {
+        if (!stockOp.id || !stockOp.qty) return showAlert("請選擇食材與變動數量");
+        const ing = ingredients.find(i => i.id === stockOp.id);
+        if (!ing) return;
+        
+        const qty = Number(stockOp.qty);
+        const totalSpent = Number(stockOp.totalSpent);
+        const inputUnitCost = (qty > 0 && stockOp.totalSpent !== '') ? (totalSpent / qty) : 0;
+        
+        const oldStock = ing.stock || 0;
+        const oldCost = ing.cost || 0;
+        const newStockTotal = oldStock + qty;
+        
+        // 樓層/倉庫數量更新
+        const oldStocksMap = ing.stocks || { default: oldStock };
+        const targetWId = stockOp.warehouseId;
+        const newStocksMap = { ...oldStocksMap, [targetWId]: (oldStocksMap[targetWId] || 0) + qty };
+        
+        // 【移動平均成本算法】
+        let finalCost = oldCost;
+        if (qty > 0 && inputUnitCost > 0 && newStockTotal > 0) {
+          const totalOldVal = oldStock * oldCost;
+          const totalNewVal = totalSpent;
+          finalCost = Math.round((totalOldVal + totalNewVal) / newStockTotal);
+        } else if (inputUnitCost > 0 && qty <= 0) {
+          finalCost = inputUnitCost;
+        }
+
+        await updateDoc(getDocRef('bar_ingredients', ing.id), { stock: newStockTotal, stocks: newStocksMap, cost: finalCost });
+        
+        const whName = warehouses.find(w => w.id === targetWId)?.name || '未知倉庫';
+        await addDoc(getCollRef('bar_inventory'), { 
+          ingredientId: ing.id, ingredientName: ing.name, changeQty: qty, 
+          reason: stockOp.reason, costPerItem: inputUnitCost > 0 ? inputUnitCost : oldCost, 
+          warehouseId: targetWId, timestamp: Date.now() 
+        });
+        
+        let logMsg = `[${whName}] ${ing.name} ${qty > 0 ? '+' : ''}${qty} (事由: ${stockOp.reason})`;
+        if (qty > 0 && totalSpent > 0) logMsg += ` / 公款扣除: $${totalSpent}`;
+        logAction('庫存調整', logMsg);
+        
+        setStockOp({ id: '', qty: '', totalSpent: '', reason: '一般進貨', warehouseId: stockOp.warehouseId });
+      };
+
+      const editIng = (ing) => showEdit({
+        title: '編輯食材設定', fields: [{ key: 'name', label: '名稱', defaultValue: ing.name }, { key: 'cost', type: 'number', label: '強制覆寫成本', defaultValue: ing.cost }, { key: 'ignore', type: 'checkbox', label: '無視此成本', defaultValue: ing.ignoreCost||false }],
+        onSave: (v) => { if(v.name&&v.cost) { updateDoc(getDocRef('bar_ingredients', ing.id), { name: v.name, cost: Number(v.cost), ignoreCost: v.ignore }); logAction('編輯食材', `更新 ${v.name}`); } }
+      });
+
+      const selectedRecipeItem = useMemo(() => items.find(i => i.id === calcItem), [calcItem, items]);
+
+      return (
+        <div className="space-y-6">
+          <div className="flex border-b border-gray-700/50 mb-2 max-w-7xl mx-auto">
+            <button onClick={() => setActiveTab('inventory')} className={`px-6 py-3 font-bold border-b-2 ${activeTab === 'inventory' ? 'border-red-500 text-red-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>庫存進退貨</button>
+            <button onClick={() => setActiveTab('calculator')} className={`px-6 py-3 font-bold border-b-2 flex items-center gap-2 ${activeTab === 'calculator' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><Calculator size={16}/> 採購預測計算機</button>
+          </div>
+
+          {activeTab === 'inventory' && (
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              <div className="xl:col-span-1 space-y-6">
+                <Card className="border-gray-700/50">
+                  <h2 className="text-lg font-bold text-white mb-4 border-b border-gray-700/50 pb-2"><span className="text-red-500 font-black pr-2">1.</span>建立新食材種類</h2>
+                  <div className="space-y-4">
+                    <Input value={newIng.name} onChange={e=>setNewIng({...newIng,name:e.target.value})} placeholder="食材名稱 (例: 伏特加)" />
+                    <Input type="number" value={newIng.cost} onChange={e=>setNewIng({...newIng,cost:e.target.value})} placeholder="初始單件成本 $" />
+                    <label className="flex items-center gap-2 p-2 bg-gray-900/50 rounded-lg cursor-pointer text-sm text-gray-300 border border-gray-800">
+                      <input type="checkbox" checked={newIng.ignore} onChange={e=>setNewIng({...newIng,ignore:e.target.checked})} className="w-4 h-4 accent-red-600"/>
+                      暫時不計算此成本
+                    </label>
+                    <Button onClick={addIng} className="w-full">建立食材</Button>
+                  </div>
+                </Card>
+
+                <Card className="border-red-900/30 shadow-[0_0_20px_rgba(220,38,38,0.05)]">
+                  <h2 className="text-lg font-bold text-white mb-4 border-b border-gray-700/50 pb-2"><span className="text-red-500 font-black pr-2">2.</span>進出貨與公帳扣除作業</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2 bg-gray-900 p-2 rounded-lg border border-gray-700">
+                      <Warehouse size={16} className="text-gray-400" />
+                      <select value={stockOp.warehouseId} onChange={e=>setStockOp({...stockOp, warehouseId: e.target.value})} className="w-full bg-transparent text-white focus:outline-none font-bold text-sm">
+                        {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                      </select>
+                    </div>
+                    
+                    <select value={stockOp.id} onChange={e=>setStockOp({...stockOp,id:e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg focus:border-red-500">
+                      <option value="" disabled>請選擇要進退貨的食材...</option>
+                      {[...ingredients].sort((a,b)=>a.name.localeCompare(b.name)).map(i => {
+                        const wStock = getStockForWarehouse(i, stockOp.warehouseId);
+                        return <option key={i.id} value={i.id}>{i.name} (所選庫存: {wStock})</option>
+                      })}
+                    </select>
+                    
+                    <div className="flex gap-2">
+                      <Input type="number" value={stockOp.qty} onChange={e=>setStockOp({...stockOp,qty:e.target.value})} placeholder="數量 (+/-)" className="w-1/2" />
+                      <Input type="number" value={stockOp.totalSpent} onChange={e=>setStockOp({...stockOp,totalSpent:e.target.value})} placeholder="總花費(公款) $" className="w-1/2" />
+                    </div>
+                    {Number(stockOp.qty) > 0 && stockOp.totalSpent !== '' && (
+                      <div className="text-xs text-yellow-500 font-bold bg-yellow-900/20 p-2 rounded border border-yellow-700/50">
+                        系統自動結算本次單位成本: ${(Number(stockOp.totalSpent) / Number(stockOp.qty)).toFixed(2)} / 件
+                      </div>
+                    )}
+                    <Input value={stockOp.reason} onChange={e=>setStockOp({...stockOp,reason:e.target.value})} placeholder="變動事由 (例: 員工代墊進貨)" />
+                    <Button onClick={addStock} variant="secondary" className="w-full shadow-md">送出變動並記錄公帳</Button>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="xl:col-span-2 border-gray-700/50 p-0 overflow-hidden flex flex-col">
+                <h2 className="text-lg font-bold text-white p-5 border-b border-gray-700/50 bg-gray-800/80">當前食材庫存狀態</h2>
+                <div className="overflow-y-auto flex-grow custom-scrollbar">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-900/80 sticky top-0 z-10 text-xs uppercase tracking-wider text-gray-500 font-bold backdrop-blur-md">
+                      <tr>
+                        <th className="p-4 border-b border-gray-700">食材名稱</th>
+                        <th className="p-4 border-b border-gray-700">庫存餘額 (各區)</th>
+                        <th className="p-4 border-b border-gray-700 text-right">單位均價</th>
+                        <th className="p-4 border-b border-gray-700 text-right">總庫存價值</th>
+                        <th className="p-4 border-b border-gray-700 text-center">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60 font-mono text-sm">
+                      {[...ingredients].sort((a,b)=>a.name.localeCompare(b.name)).map(ing => {
+                        const totalStock = ing.stock || 0;
+                        const isLow = totalStock <= 5;
+                        const ignore = systemConfig.ignoreAllCosts || ing.ignoreCost;
+                        return (
+                          <tr key={ing.id} className={`hover:bg-gray-700/30 ${isLow ? 'bg-red-900/10' : ''}`}>
+                            <td className="p-4 font-bold text-gray-200 font-sans flex items-center gap-2">
+                              {isLow && <AlertTriangle size={14} className="text-red-500"/>} {ing.name}
+                            </td>
+                            <td className="p-4">
+                              <div className={`font-black mb-1 ${isLow ? 'text-red-400' : 'text-green-400'}`}>總量: {totalStock}</div>
+                              <div className="flex flex-wrap gap-1 text-[10px] text-gray-400">
+                                {warehouses.map(w => {
+                                  const wStock = getStockForWarehouse(ing, w.id);
+                                  return wStock > 0 ? <span key={w.id} className="bg-gray-800 border border-gray-700 px-1.5 py-0.5 rounded">{w.name}: {wStock}</span> : null;
+                                })}
+                              </div>
+                            </td>
+                            <td className="p-4 text-right text-gray-400">
+                              {ignore ? <span className="line-through text-gray-600">${ing.cost || 0}</span> : `$${ing.cost || 0}`}
+                            </td>
+                            <td className="p-4 text-right font-bold text-yellow-500/80">{ignore ? '$0' : `$${totalStock * (ing.cost || 0)}`}</td>
+                            <td className="p-4 text-center">
+                              <button onClick={() => editIng(ing)} className="text-gray-500 hover:text-yellow-400 bg-gray-900 p-2 rounded"><Edit size={16}/></button>
+                            </td>
+                          </tr>
+                      )})}
+                      {ingredients.length === 0 && <tr><td colSpan="5" className="text-center p-10 text-gray-500 font-sans">尚無庫存資料</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'calculator' && (
+            <div className="max-w-4xl mx-auto">
+              <Card className="border-yellow-600/30 shadow-[0_0_30px_rgba(234,179,8,0.1)] relative overflow-hidden">
+                <div className="absolute top-[-50px] right-[-50px] opacity-5 text-yellow-500 pointer-events-none"><Calculator size={250}/></div>
+                <div className="relative z-10">
+                  <h2 className="text-2xl font-black text-white mb-2 flex items-center gap-3"><Calculator className="text-yellow-500"/> 採購需求預測</h2>
+                  <p className="text-gray-400 text-sm mb-6">選擇特定菜單品項，並輸入預計要銷售的份數，系統將展開配方並幫您計算所需採購的食材與初估花費。</p>
+
+                  <div className="flex flex-col md:flex-row gap-4 mb-8 bg-gray-900/60 p-4 rounded-xl border border-gray-700/50 backdrop-blur-sm">
+                    <div className="flex-grow">
+                      <label className="block text-xs text-gray-500 uppercase font-bold mb-1 tracking-wider">目標品項 Target Item</label>
+                      <select value={calcItem} onChange={e=>setCalcItem(e.target.value)} className="w-full bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded-lg focus:border-yellow-500 text-lg font-bold">
+                        <option value="">-- 請選擇品項 --</option>
+                        {[...items].filter(i=>i.recipe?.length>0).sort((a,b)=>a.name.localeCompare(b.name)).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="w-full md:w-48">
+                      <label className="block text-xs text-gray-500 uppercase font-bold mb-1 tracking-wider">目標份數 Portions</label>
+                      <Input type="number" value={calcPortions} onChange={e=>setCalcPortions(Math.max(1, e.target.value))} className="w-full text-center text-lg font-bold" />
+                    </div>
+                  </div>
+
+                  {selectedRecipeItem ? (
+                    <div className="bg-gray-950/50 rounded-xl border border-gray-800 overflow-hidden">
+                      <div className="p-4 bg-gray-800/80 border-b border-gray-700 flex justify-between items-center">
+                        <h3 className="font-bold text-gray-200 text-lg">{selectedRecipeItem.name} <span className="text-sm font-normal text-gray-400">x {calcPortions} 份的食材拆解</span></h3>
+                      </div>
+                      <table className="w-full text-left text-sm font-mono">
+                        <thead className="bg-gray-900 text-gray-500 text-xs uppercase tracking-widest">
+                          <tr>
+                            <th className="p-3 pl-5 border-b border-gray-800 font-sans font-bold">所需食材</th>
+                            <th className="p-3 border-b border-gray-800 text-right">需求總量</th>
+                            <th className="p-3 border-b border-gray-800 text-right">總庫存</th>
+                            <th className="p-3 border-b border-gray-800 text-right text-red-400 bg-red-950/20">缺口數量</th>
+                            <th className="p-3 pr-5 border-b border-gray-800 text-right text-yellow-500 bg-yellow-950/20">預估採購額</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                          {selectedRecipeItem.recipe.map(req => {
+                            const ing = ingredients.find(i => i.id === req.ingredientId);
+                            const requiredQty = req.qty * calcPortions;
+                            const currentStock = ing ? (ing.stock || 0) : 0;
+                            const shortage = Math.max(0, requiredQty - currentStock);
+                            const estCost = shortage * (ing?.cost || 0);
+                            return (
+                              <tr key={req.ingredientId} className="hover:bg-gray-800/30">
+                                <td className="p-3 pl-5 font-sans text-gray-300 font-bold">{req.name} <span className="text-[10px] text-gray-600 bg-gray-900 px-1 rounded ml-1">配方:x{req.qty}</span></td>
+                                <td className="p-3 text-right text-white">{requiredQty}</td>
+                                <td className="p-3 text-right text-green-400">{currentStock}</td>
+                                <td className="p-3 text-right font-black text-red-500 bg-red-950/10">{shortage > 0 ? shortage : '-'}</td>
+                                <td className="p-3 pr-5 text-right font-bold text-yellow-500 bg-yellow-950/10">${estCost}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="bg-gray-900 border-t-2 border-gray-700">
+                          <tr>
+                            <td colSpan="4" className="p-4 text-right font-sans font-black text-gray-400">總計預估採購預算：</td>
+                            <td className="p-4 pr-5 text-right font-black text-yellow-400 text-lg">
+                              ${selectedRecipeItem.recipe.reduce((sum, req) => {
+                                const ing = ingredients.find(i => i.id === req.ingredientId);
+                                const shortage = Math.max(0, (req.qty * calcPortions) - (ing?.stock || 0));
+                                return sum + (shortage * (ing?.cost || 0));
+                              }, 0)}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center p-10 border border-gray-800 border-dashed rounded-xl text-gray-600 bg-gray-900/30">
+                      <Calculator size={48} className="mx-auto mb-3 opacity-20" />
+                      <p>請於上方選單指定擁有配方的品項</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const ActivityManager = () => {
+      const { activities, showAlert, showConfirm, showEdit, logAction } = useAppContext();
+      const [actData, setActData] = useState({ name: '', type: 'percent', value: '', start: '', end: '' });
+
+      const add = async () => {
+        if (!actData.name || !actData.value || !actData.start || !actData.end) return showAlert("請填寫完整");
+        await addDoc(getCollRef('bar_activities'), { name: actData.name, type: actData.type, value: Number(actData.value), startTime: new Date(actData.start).toISOString(), endTime: new Date(actData.end).toISOString(), isActive: true });
+        logAction('新增活動', `新增: ${actData.name}`); setActData({name:'', type:'percent', value:'', start:'', end:''});
+      };
+
+      const edit = (act) => showEdit({
+        title: '編輯活動', fields: [ { key: 'name', label: '活動名稱', defaultValue: act.name }, { key: 'type', label: '類型', type: 'select', defaultValue: act.type, options: [{value:'percent', label:'打折(%)'}, {value:'amount', label:'折抵現金($)'}] }, { key: 'value', type: 'number', label: '數值', defaultValue: act.value }, { key: 's', type: 'datetime-local', label: '開始', defaultValue: toLocalDatetime(act.startTime) }, { key: 'e', type: 'datetime-local', label: '結束', defaultValue: toLocalDatetime(act.endTime) } ],
+        onSave: (v) => { if(v.name) { updateDoc(getDocRef('bar_activities', act.id), { name: v.name, type: v.type, value: Number(v.value), startTime: new Date(v.s).toISOString(), endTime: new Date(v.e).toISOString()}); logAction('編輯活動', v.name); } }
+      });
+
+      const toggle = (act) => { updateDoc(getDocRef('bar_activities', act.id), { isActive: !act.isActive }); logAction('切換狀態', `${act.name} -> ${!act.isActive}`); };
+      const del = (id, name) => showConfirm("確定刪除活動？", () => { deleteDoc(getDocRef('bar_activities', id)); logAction('刪除活動', name); });
+
+      const now = new Date().toISOString();
+
+      return (
+        <div className="space-y-6 max-w-7xl mx-auto">
+          <Card className="border-gray-700/50">
+            <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Zap className="text-yellow-500"/> 新增活動優惠</h2>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+              <div className="md:col-span-2"><Input value={actData.name} onChange={e=>setActData({...actData,name:e.target.value})} placeholder="活動名稱 (例: 歡樂時光)" /></div>
+              <div className="md:col-span-1"><select value={actData.type} onChange={e=>setActData({...actData,type:e.target.value})} className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg"><option value="percent">打折(%)</option><option value="amount">折抵($)</option></select></div>
+              <div className="md:col-span-1"><Input type="number" value={actData.value} onChange={e=>setActData({...actData,value:e.target.value})} placeholder="數值" /></div>
+              <div className="md:col-span-1"><Input type="datetime-local" value={actData.start} onChange={e=>setActData({...actData,start:e.target.value})} className="text-sm px-2"/></div>
+              <div className="md:col-span-1"><Input type="datetime-local" value={actData.end} onChange={e=>setActData({...actData,end:e.target.value})} className="text-sm px-2"/></div>
+            </div>
+            <Button onClick={add} className="mt-4 shadow-lg"><Plus size={18}/> 建立檔期</Button>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {activities.map(act => {
+              const ongoing = act.startTime <= now && act.endTime >= now, past = act.endTime < now, future = act.startTime > now;
+              let sColor = "text-gray-500", sText = "已結束";
+              if (act.isActive && ongoing) { sColor = "text-green-500 drop-shadow-[0_0_5px_#22c55e]"; sText = "進行中"; }
+              else if (act.isActive && future) { sColor = "text-yellow-500"; sText = "未開始"; }
+              else if (!act.isActive) { sColor = "text-red-500"; sText = "已停用"; }
+
+              return (
+                <Card key={act.id} className={`border-l-4 ${act.isActive && ongoing ? 'border-l-green-500 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-l-gray-600'} relative p-5`}>
+                  <div className="absolute top-4 right-4 flex gap-1">
+                    <button onClick={() => edit(act)} className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg"><Edit size={16}/></button>
+                    <button onClick={() => toggle(act)} className="p-2 hover:bg-gray-700 text-gray-400 rounded-lg">{act.isActive ? <Square size={16} className="text-red-400"/> : <Play size={16} className="text-green-400"/>}</button>
+                    <button onClick={() => del(act.id, act.name)} className="p-2 hover:bg-gray-700 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                  </div>
+                  <h3 className="text-lg font-black text-white pr-24 mb-1">{act.name}</h3>
+                  <p className={`text-sm font-black mb-4 tracking-widest ${sColor}`}>{sText}</p>
+                  <div className="text-sm bg-gray-900/80 p-3 rounded-lg border border-gray-800 shadow-inner">
+                    <p className="font-mono text-gray-400 mb-2">Benefit: <span className="text-yellow-400 font-bold text-base">{act.type === 'percent' ? `${act.value}% 折扣` : `-$${act.value}`}</span></p>
+                    <p className="text-xs text-gray-500 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> {new Date(act.startTime).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 flex items-center gap-2 mt-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> {new Date(act.endTime).toLocaleString()}</p>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    const RoleManager = () => {
+      const { roles, showAlert, showConfirm, logAction } = useAppContext();
+      const [newRole, setNewRole] = useState('');
+      const [editing, setEditing] = useState(null);
+
+      const add = async () => {
+        if(!newRole.trim()) return showAlert("請輸入名稱");
+        if(roles.find(r=>r.name===newRole)) return showAlert("已存在");
+        const p = PERMISSION_LIST.reduce((a, c) => ({ ...a, [c.id]: c.id==='dashboard' }), {});
+        await addDoc(getCollRef('bar_roles'), { name: newRole, permissions: p, isSystem: false });
+        logAction('新增職位', newRole); setNewRole('');
+      };
+
+      const saveEdit = async () => {
+        if(!editing.name.trim()) return showAlert("名稱不可為空");
+        await updateDoc(getDocRef('bar_roles', editing.id), { name: editing.name, permissions: editing.permissions });
+        logAction('編輯權限', editing.name); setEditing(null);
+      };
+
+      const del = (id, name) => showConfirm(`確定刪除「${name}」？`, async () => { await deleteDoc(getDocRef('bar_roles', id)); logAction('刪除職位', name); });
+
+      return (
+        <div className="space-y-6 max-w-7xl mx-auto">
+          {editing && (
+            <Card className="border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)] mb-6">
+              <h2 className="text-xl font-bold text-yellow-500 mb-4 flex items-center gap-2"><Shield size={20} /> 編輯權限矩陣 - {editing.name}</h2>
+              <Input value={editing.name} onChange={e=>setEditing({...editing, name: e.target.value})} disabled={editing.isSystem} className="max-w-sm mb-4" />
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                {PERMISSION_LIST.map(p => (
+                  <label key={p.id} className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${editing.permissions[p.id] ? 'bg-red-900/20 border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.1)]' : 'bg-gray-800 border-gray-700/50 hover:bg-gray-700'}`}>
+                    <input type="checkbox" checked={editing.permissions[p.id]||false} onChange={e=>setEditing({...editing, permissions: {...editing.permissions, [p.id]: e.target.checked}})} className="w-4 h-4 accent-red-600"/>
+                    <span className={`text-sm font-bold ${editing.permissions[p.id] ? 'text-red-400' : 'text-gray-400'}`}>{p.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-3"><Button variant="secondary" onClick={saveEdit}>部署更新</Button><Button variant="outline" onClick={()=>setEditing(null)}>放棄</Button></div>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <Card className="xl:col-span-1 h-fit">
+              <h2 className="text-xl font-bold text-white mb-4">註冊新職位</h2>
+              <Input value={newRole} onChange={e=>setNewRole(e.target.value)} placeholder="例: 實習生、會計" className="mb-4" />
+              <Button onClick={add} className="w-full">建立模組</Button>
+            </Card>
+            <Card className="xl:col-span-2">
+              <h2 className="text-xl font-bold text-white mb-6">系統授權等級列表</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {roles.map(r => (
+                  <div key={r.id} className="bg-gray-900/80 border border-gray-700 p-4 rounded-xl flex flex-col group hover:border-gray-500">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2"><span className="font-bold text-lg text-white">{r.name}</span>{r.isSystem && <span className="bg-red-900/50 text-red-300 text-[10px] px-2 py-0.5 rounded border border-red-800 tracking-widest uppercase">SYS-LOCK</span>}</div>
+                      <div className="flex gap-1">
+                        <button onClick={()=>setEditing(r)} className="p-2 hover:bg-gray-700 text-gray-500 hover:text-yellow-400 rounded"><Edit size={16}/></button>
+                        {!r.isSystem && <button onClick={()=>del(r.id, r.name)} className="p-2 hover:bg-gray-700 text-gray-500 hover:text-red-500 rounded"><Trash2 size={16}/></button>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {PERMISSION_LIST.filter(p=>r.permissions[p.id]).map(p=><span key={p.id} className="bg-gray-800 border border-gray-700 px-2 py-0.5 rounded text-xs text-gray-400">{p.label}</span>)}
+                      {Object.values(r.permissions||{}).every(v=>!v) && <span className="text-red-500 text-xs font-bold bg-red-900/20 px-2 py-0.5 rounded">RESTRICTED - 無存取權限</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+      );
+    };
+
+    const UserManager = () => {
+      const { users, roles, showAlert, showConfirm, showEdit, logAction } = useAppContext();
+      const [data, setData] = useState({ name: '', pwd: '', role: '' });
+      
+      useEffect(() => { if(roles.length && !data.role) setData(d => ({...d, role: roles[0].id})); }, [roles]);
+
+      const add = async () => {
+        if(!data.name||!data.pwd||!data.role) return showAlert("請填寫完整");
+        if(users.find(u=>u.name===data.name)) return showAlert("已存在");
+        await addDoc(getCollRef('bar_users'), { name: data.name, password: data.pwd, role: data.role, isOnline: false, lastActive: 0 });
+        logAction('新增帳號', data.name); setData({name:'', pwd:'', role: roles[0].id});
+      };
+
+      const edit = (u) => {
+        const isSys = u.name === '花大熊';
+        showEdit({
+          title: isSys ? '編輯核心管理員' : '更新帳號配置',
+          fields: isSys ? [{ key: 'p', label: '安全密碼', defaultValue: u.password }] : [ { key: 'n', label: '名稱', defaultValue: u.name }, { key: 'p', label: '密碼', defaultValue: u.password }, { key: 'r', label: '職位', type: 'select', defaultValue: u.role, options: roles.map(r=>({value:r.id, label:r.name})) } ],
+          onSave: (v) => { if(v.n && v.n!==u.name && users.find(x=>x.name===v.n)) return showAlert("名稱重複"); updateDoc(getDocRef('bar_users', u.id), isSys ? {password:v.p} : {name:v.n, password:v.p, role:v.r}); logAction('更新帳號', u.name); }
+        });
+      };
+      const del = (id, n) => { if(n==='花大熊')return showAlert("拒絕存取：無法刪除核心帳號"); showConfirm(`刪除 ${n}?`, () => { deleteDoc(getDocRef('bar_users', id)); logAction('刪除帳號', n); }); };
+
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <Card className="lg:col-span-1 h-fit border-t-4 border-t-red-600 shadow-[0_0_20px_rgba(220,38,38,0.1)]">
+            <h2 className="text-xl font-bold text-red-500 mb-6 flex items-center gap-2"><Users size={20}/> 分發新終端帳號</h2>
+            <div className="space-y-4">
+              <Input value={data.name} onChange={e=>setData({...data,name:e.target.value})} placeholder="人員代號 (帳號)" />
+              <Input value={data.pwd} onChange={e=>setData({...data,pwd:e.target.value})} placeholder="初始密碼" />
+              <select value={data.role} onChange={e=>setData({...data,role:e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg"><option value="" disabled>指派職位...</option>{roles.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select>
+              <Button onClick={add} className="w-full mt-2">註冊實體</Button>
+            </div>
+          </Card>
+          <Card className="lg:col-span-2">
+            <h2 className="text-xl font-bold text-white mb-6">活躍連線實體列表</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {users.map(u => (
+                <div key={u.id} className="bg-gray-900/60 border border-gray-700/80 p-4 rounded-xl flex justify-between items-center group backdrop-blur-sm hover:border-gray-500 shadow-inner">
+                  <div className="min-w-0 pr-2">
+                    <div className="flex items-center gap-2 mb-2"><span className="font-bold text-lg text-white truncate">{u.name}</span>{(u.role==='admin_role'||u.role==='admin') && <Zap size={14} className="text-yellow-500 fill-yellow-500 drop-shadow-[0_0_5px_#eab308]"/>}</div>
+                    <div className="text-xs text-gray-500 flex flex-col gap-1 font-mono">
+                      <span>ROLE: <span className="text-gray-300 bg-gray-800 px-1 rounded">{roles.find(r=>r.id===u.role)?.name || u.role}</span></span>
+                      <span>PASS: <span className="text-gray-600 select-all">{u.password}</span></span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1 flex-shrink-0">
+                    <button onClick={()=>edit(u)} className="p-2 bg-gray-800 hover:bg-yellow-600/20 text-gray-400 hover:text-yellow-500 rounded-lg"><Edit size={16}/></button>
+                    {u.name!=='花大熊' && <button onClick={()=>del(u.id, u.name)} className="p-2 bg-gray-800 hover:bg-red-900/40 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      );
+    };
+
+    const SettingsView = () => {
+      const { users, roles, categories, items, tags, activities, orders, inventoryLogs, ingredients, operationLogs, settingsData, logAction, systemConfig, showAlert, warehouses } = useAppContext();
+      const allData = { bar_users: users, bar_roles: roles, bar_categories: categories, bar_items: items, bar_tags: tags, bar_activities: activities, bar_orders: orders, bar_inventory: inventoryLogs, bar_ingredients: ingredients, bar_operation_logs: operationLogs };
+      
+      const [activeTab, setActiveTab] = useState('preferences');
+      const [isImporting, setIsImporting] = useState(false);
+      const [importStatus, setImportStatus] = useState('');
+      const fileInputRef = useRef(null);
+      const [exportConfig, setExportConfig] = useState(Object.keys(COLL_NAMES_MAP).reduce((a, k) => ({ ...a, [k]: true }), {}));
+      const [pendingImport, setPendingImport] = useState(null);
+      const [importConfig, setImportConfig] = useState({});
+
+      const [newWhName, setNewWhName] = useState('');
+
+      const handleExport = () => {
+        const fd = {}; Object.keys(exportConfig).forEach(k => { if(exportConfig[k] && allData[k]) fd[k] = allData[k]; });
+        if(!Object.keys(fd).length) return showAlert("請選擇匯出項目");
+        const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([JSON.stringify(fd, null, 2)], { type: 'application/json' })); link.download = `ikb_backup_${Date.now()}.json`; link.click(); logAction('系統備份', '匯出 JSON 資料庫');
+      };
+
+      const handleExportInventoryCSV = () => {
+        const headers = ['時間', '紀錄ID', '食材名稱', '變動數量', '單位成本', '總成本(花費)', '變動倉庫', '操作事由'];
+        const rows = inventoryLogs.map(l => [
+          new Date(l.timestamp).toLocaleString(), l.id, l.ingredientName, l.changeQty, 
+          l.costPerItem, l.changeQty * l.costPerItem, warehouses.find(w=>w.id===l.warehouseId)?.name || '未知', l.reason
+        ]);
+        const csvStr = [headers.join(','), ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+        downloadCSV(csvStr, `inventory_logs_${Date.now()}.csv`);
+        logAction('報表匯出', '匯出庫存進退貨紀錄(CSV)');
+      };
+
+      const handleExportOperationLogsCSV = () => {
+        const headers = ['時間', '操作人員', '動作類型', '詳細內容'];
+        const rows = operationLogs.map(l => [
+          new Date(l.timestamp).toLocaleString(), l.userName, l.action, l.details
+        ]);
+        const csvStr = [headers.join(','), ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+        downloadCSV(csvStr, `operation_logs_${Date.now()}.csv`);
+        logAction('報表匯出', '匯出系統操作日誌(CSV)');
+      };
+
+      const handleFile = (e) => {
+        const f = e.target.files[0]; if(!f) return;
+        const r = new FileReader(); r.onload = (ev) => {
+          try { const d = JSON.parse(ev.target.result); setPendingImport(d); const ic = {}; Object.keys(d).forEach(k => { if(COLL_NAMES_MAP[k]) ic[k]=true; }); setImportConfig(ic); setImportStatus(''); } catch(err) { showAlert("JSON格式錯誤"); }
+          e.target.value = '';
+        }; r.readAsText(f);
+      };
+
+      const execImport = async () => {
+        if(!pendingImport) return; setIsImporting(true); setImportStatus('核心覆寫協議執行中...');
+        try {
+          let c = 0;
+          for (const [coll, docsArr] of Object.entries(pendingImport)) {
+            if(!importConfig[coll]) continue;
+            for (const docData of docsArr) {
+              const { id, ...rest } = docData; if(!id) continue; let targetId = id;
+              if (rest.name && ['bar_users','bar_roles','bar_categories','bar_items','bar_tags','bar_activities','bar_ingredients'].includes(coll)) {
+                const exist = allData[coll.replace('bar_','')]?.find(d => d.name === rest.name); if(exist) targetId = exist.id;
+              }
+              await setDoc(getDocRef(coll, targetId), rest); c++;
+            }
+          }
+          setImportStatus(`覆寫成功。重建索引：${c} 個節點。`); logAction('系統還原', `更新 ${c} 筆`); setPendingImport(null);
+        } catch(err) { setImportStatus(`核心錯誤: ${err.message}`); } finally { setIsImporting(false); }
+      };
+
+      const addWarehouse = async () => {
+        if (!newWhName.trim()) return;
+        const updatedWarehouses = [...warehouses, { id: 'w_' + Date.now(), name: newWhName }];
+        await updateDoc(getDocRef('bar_settings', 'config'), { warehouses: updatedWarehouses }, {merge:true});
+        logAction('系統設定', `新增倉庫: ${newWhName}`);
+        setNewWhName('');
+      };
+
+      const delWarehouse = async (wId) => {
+        if (warehouses.length <= 1) return showAlert("系統至少需要保留一個倉庫");
+        const updatedWarehouses = warehouses.filter(w => w.id !== wId);
+        await updateDoc(getDocRef('bar_settings', 'config'), { warehouses: updatedWarehouses }, {merge:true});
+        logAction('系統設定', `移除倉庫節點`);
+      };
+
+      return (
+        <Card className="max-w-5xl mx-auto border-yellow-900/50 border bg-gray-900/90 backdrop-blur-xl p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          <div className="flex border-b border-gray-800 bg-black/40">
+            {[ {id:'preferences', l:'系統偏好', i:Sliders}, {id:'backup', l:'資料庫I/O', i:Settings}, {id:'logs', l:'操作端點追蹤', i:History} ].map(t=>(
+              <button key={t.id} onClick={()=>setActiveTab(t.id)} className={`flex-1 py-4 font-bold flex items-center justify-center gap-2 ${activeTab===t.id?'bg-gray-800 text-yellow-500 border-b-2 border-yellow-500 shadow-[inset_0_-10px_20px_rgba(234,179,8,0.1)]':'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'}`}>
+                <t.i size={18}/> <span className="hidden sm:inline">{t.l}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="p-6 md:p-8 min-h-[500px]">
+            {activeTab === 'preferences' && (
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">倉庫與樓層管理</h3>
+                  <div className="bg-gray-800/50 p-5 rounded-xl border border-gray-700 shadow-inner">
+                    <div className="flex gap-2 mb-4">
+                      <Input value={newWhName} onChange={e=>setNewWhName(e.target.value)} placeholder="新增樓層/倉庫名稱 (例: 一樓吧台)" className="max-w-xs"/>
+                      <Button onClick={addWarehouse}>建立節點</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {warehouses.map(w => (
+                        <div key={w.id} className="bg-gray-900 border border-gray-600 px-3 py-2 rounded-lg flex items-center gap-2 text-sm text-gray-200">
+                          <Warehouse size={14} className="text-gray-400"/>
+                          {w.name}
+                          <button onClick={() => delWarehouse(w.id)} className="text-gray-500 hover:text-red-400 ml-2"><X size={14}/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">全域成本運算引擎</h3>
+                  <label className="flex items-start gap-4 p-5 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:border-red-500/50 group shadow-inner">
+                    <input type="checkbox" checked={systemConfig.ignoreAllCosts} onChange={async(e)=>{ const v=e.target.checked; await setDoc(getDocRef('bar_settings', 'config'), {ignoreAllCosts:v}, {merge:true}); logAction('系統設定', `全域無視成本: ${v}`); }} className="mt-1 w-5 h-5 accent-red-600"/>
+                    <div>
+                      <div className="font-black text-gray-200 text-lg group-hover:text-red-400">強制終止成本計算 (IGNORE_ALL_COSTS)</div>
+                      <div className="text-sm text-gray-500 mt-2 leading-relaxed">啟動此覆寫指令後，儀表板的「淨利」模組將 100% 映射「總營收」，且結帳運算核心將忽略所有配方成本。<br/><span className="text-yellow-600 font-bold">*註：庫存數量的自動扣除機制 (Stock Deductions) 不受此指令影響，仍會正常運作。</span></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'backup' && (
+              <div className="space-y-8">
+                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><FileSpreadsheet className="text-green-500"/> Excel (CSV) 報表匯出</h3>
+                  <p className="text-sm text-gray-400 mb-4">匯出包含 UTF-8 編碼的 CSV 檔案，可直接使用 Excel 開啟且不會亂碼，適用於每日對帳與分析。</p>
+                  <div className="flex flex-wrap gap-4">
+                    <Button onClick={handleExportInventoryCSV} className="bg-green-700 hover:bg-green-600 border-green-600"><FileSpreadsheet size={16}/> 匯出 庫存進退貨紀錄</Button>
+                    <Button onClick={handleExportOperationLogsCSV} className="bg-green-700 hover:bg-green-600 border-green-600"><FileSpreadsheet size={16}/> 匯出 系統操作日誌</Button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Download className="text-blue-500"/> 系統資料庫打包 (JSON)</h3>
+                  <p className="text-sm text-gray-400 mb-4">將完整的系統架構資料打包為 JSON 格式，僅供系統還原與資料遷移使用。</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+                    {Object.entries(COLL_NAMES_MAP).map(([k, l]) => (
+                      <label key={k} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${exportConfig[k] ? 'border-blue-600/50 bg-blue-900/10' : 'border-gray-700 hover:border-gray-500'}`}>
+                        <input type="checkbox" checked={exportConfig[k]||false} onChange={e=>setExportConfig({...exportConfig, [k]:e.target.checked})} className="w-4 h-4 accent-blue-600"/>
+                        <span className={`text-sm font-mono ${exportConfig[k] ? 'text-white' : 'text-gray-500'}`}>{l}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <Button onClick={handleExport} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 shadow-blue-900/50 border-blue-500"><FileJson size={18}/> 建立 JSON 備份封裝</Button>
+                </div>
+
+                <div className="bg-red-950/20 p-6 rounded-xl border border-red-900/30">
+                  <h3 className="text-lg font-bold text-red-400 mb-4 flex items-center gap-2"><Upload/> 核心覆寫與還原 (Restore)</h3>
+                  <input type="file" accept=".json" ref={fileInputRef} onChange={handleFile} className="hidden" />
+                  {!pendingImport ? (
+                    <Button variant="outline" onClick={()=>fileInputRef.current?.click()} className="text-red-400 border-red-900/50 hover:bg-red-900/20 w-full sm:w-auto">掛載外部 JSON 封裝檔</Button>
+                  ) : (
+                    <div className="border border-red-700/50 bg-black/40 p-5 rounded-lg shadow-inner">
+                      <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+                        <h4 className="font-bold text-red-400 font-mono tracking-widest uppercase">Select Modules to Overwrite</h4>
+                        <button onClick={()=>setPendingImport(null)} className="text-gray-500 hover:text-white bg-gray-800 p-1 rounded"><X size={18}/></button>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+                        {Object.keys(pendingImport).filter(k=>COLL_NAMES_MAP[k]).map(k => (
+                          <label key={k} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${importConfig[k] ? 'border-red-600/50 bg-red-900/20' : 'border-gray-700 hover:border-gray-500'}`}>
+                            <input type="checkbox" checked={importConfig[k]||false} onChange={e=>setImportConfig({...importConfig, [k]:e.target.checked})} className="w-4 h-4 accent-red-600"/>
+                            <span className={`text-sm font-mono ${importConfig[k] ? 'text-red-200 font-bold' : 'text-gray-500'}`}>{COLL_NAMES_MAP[k]} <span className="text-[10px]">({pendingImport[k].length})</span></span>
+                          </label>
+                        ))}
+                      </div>
+                      <Button variant="danger" onClick={execImport} disabled={isImporting || !Object.values(importConfig).some(v=>v)} className="w-full font-black tracking-widest shadow-[0_0_15px_rgba(220,38,38,0.4)]">
+                        {isImporting ? 'EXECUTING OVERWRITE...' : 'CONFIRM OVERWRITE AND RESTORE'}
+                      </Button>
+                    </div>
+                  )}
+                  {importStatus && <p className={`mt-4 text-sm font-mono tracking-wide ${importStatus.includes('成功') ? 'text-green-400 drop-shadow-[0_0_5px_#22c55e]' : 'text-red-500 drop-shadow-[0_0_5px_#ef4444]'}`}>{importStatus}</p>}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'logs' && (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between mb-4 bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                  <p className="text-xs text-gray-400 font-mono">SYS_LOG_RETENTION: 30 DAYS</p>
+                  <div className="text-xs bg-yellow-900/30 text-yellow-500 px-3 py-1 rounded-full border border-yellow-700/50 font-bold tracking-widest">
+                    TOTAL: {operationLogs.length}
+                  </div>
+                </div>
+                <div className="overflow-x-auto overflow-y-auto max-h-[500px] border border-gray-700 rounded-xl bg-black/40 custom-scrollbar shadow-inner">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-gray-900/90 sticky top-0 z-10 backdrop-blur-md">
+                      <tr>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Timestamp</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Operator</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Action</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Data Node</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/50 font-mono text-sm">
+                      {[...operationLogs].sort((a,b)=>b.timestamp-a.timestamp).map(l => (
+                        <tr key={l.id} className="hover:bg-gray-800/40">
+                          <td className="p-3 text-xs text-gray-500">{new Date(l.timestamp).toLocaleString()}</td>
+                          <td className="p-3 text-gray-300">{l.userName}</td>
+                          <td className="p-3 font-bold text-yellow-500/80">{l.action}</td>
+                          <td className="p-3 text-gray-400 truncate max-w-xs">{l.details}</td>
+                        </tr>
+                      ))}
+                      {operationLogs.length === 0 && <tr><td colSpan="4" className="text-center p-10 text-gray-600">NO LOGS FOUND</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+      );
+    };
+
+    const TagsManager = () => { return <div className="text-center p-10 text-gray-500 font-bold bg-gray-900/50 rounded-xl border border-gray-800">標籤功能已整合至其他模組，或依據後續需求獨立開放。</div>; };
+
+    const rootElement = document.getElementById('root');
+    const root = createRoot(rootElement);
+    root.render(<App />);
+  </script>
+
+</body>
+</html>
