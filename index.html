@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>鐵騎酒吧 IRON RIDER BAR SYSTEM</title>
-
+  
   <!-- Favicon 設定 -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   
@@ -113,8 +113,8 @@
       const variants = {
         primary: "bg-gradient-to-b from-red-700 to-red-900 text-white hover:from-red-600 hover:to-red-800 shadow-[0_0_15px_rgba(220,38,38,0.5)] border border-red-500/50",
         secondary: "bg-gradient-to-b from-yellow-600 to-yellow-800 text-white hover:from-yellow-500 hover:to-yellow-700 shadow-[0_0_15px_rgba(234,179,8,0.4)] border border-yellow-500/50",
-        danger: "bg-black/80 text-red-500 hover:bg-red-950 border border-red-900 hover:border-red-500 shadow-inner",
-        outline: "border border-gray-700 bg-black/50 text-gray-400 hover:text-red-400 hover:border-red-900/50"
+        danger: "bg-black/80 text-red-500 hover:bg-[#121216] border border-red-900 hover:border-red-500 shadow-inner",
+        outline: "border border-[#1f1f25] bg-[#050505] text-gray-400 hover:text-red-400 hover:border-red-900/50"
       };
       return (
         <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>
@@ -128,7 +128,7 @@
         {Icon && <Icon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />}
         <input
           type={type} value={value} onChange={onChange} placeholder={placeholder}
-          className={`w-full bg-[#050505]/80 border border-gray-800 text-gray-200 ${Icon ? 'pl-9' : 'px-4'} py-2.5 rounded-sm focus:outline-none focus:border-red-700 focus:ring-1 focus:ring-red-900/50 shadow-inner font-bold placeholder-gray-700`}
+          className={`w-full bg-[#050505] border border-[#1f1f25] text-gray-200 ${Icon ? 'pl-9' : 'px-4'} py-2.5 rounded-sm focus:outline-none focus:border-red-700 focus:ring-1 focus:ring-red-900/50 shadow-inner font-bold placeholder-gray-700`}
           {...props}
         />
       </div>
@@ -146,7 +146,7 @@
       const [values, setValues] = useState(dialog.fields.reduce((acc, f) => ({...acc, [f.key]: f.defaultValue}), {}));
 
       return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#050505]/95 z-[100] flex items-center justify-center p-4">
           <Card className="max-w-md w-full border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Edit size={20} className="text-yellow-500"/> {dialog.title}
@@ -157,13 +157,13 @@
                   {f.type !== 'checkbox' && <label className="block text-sm text-gray-400 mb-1">{f.label}</label>}
                   {f.type === 'select' ? (
                     <select
-                      className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg focus:border-red-500"
+                      className="w-full bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg focus:border-red-500"
                       value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})}
                     >
                       {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : f.type === 'checkbox' ? (
-                    <label className="flex items-center gap-2 cursor-pointer mt-2 mb-2 p-3 border border-gray-700 rounded-lg hover:bg-gray-700/50 bg-gray-900/50">
+                    <label className="flex items-center gap-2 cursor-pointer mt-2 mb-2 p-3 border border-[#1f1f25] rounded-lg hover:bg-[#121216] bg-[#0a0a0c]">
                       <input
                         type="checkbox" checked={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.checked})}
                         className="w-4 h-4 accent-red-600"
@@ -353,7 +353,7 @@
       }, [allData, appUser, isGuest, userRole, systemConfig, warehouses]);
 
 
-      if (isInitializing) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-red-500 text-2xl font-bold">SYSTEM BOOTING...</div>;
+      if (isInitializing) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-red-500 text-2xl font-bold">SYSTEM BOOTING...</div>;
 
       if (!appUser) return <LoginScreen users={allData.users} roles={allData.roles} onLogin={setAppUser} onGuest={() => setAppUser('guest')} />;
 
@@ -379,7 +379,7 @@
           <div className="flex flex-col md:flex-row h-screen">
             
             {/* Sidebar */}
-            <aside className="w-full md:w-64 bg-black/90 backdrop-blur-md border-b md:border-b-0 md:border-r border-red-950 flex flex-col flex-shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.9)] relative z-10">
+            <aside className="w-full md:w-64 bg-[#0a0a0c] border-b md:border-b-0 md:border-r border-red-950 flex flex-col flex-shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.9)] relative z-10">
               <div className="absolute inset-0 bg-gradient-to-b from-red-900/10 to-transparent pointer-events-none"></div>
               <div className="p-6 flex items-center justify-center border-b border-red-950/50">
                 <img src="https://i.meee.com.tw/ncmL8U6.png" alt="LOGO" className="h-24 md:h-32 object-contain drop-shadow-[0_0_20px_rgba(220,38,38,0.6)]" />
@@ -396,7 +396,7 @@
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm transition-all ${
                           isActive 
                             ? 'bg-gradient-to-r from-red-950 to-black text-red-100 font-black shadow-[0_0_15px_rgba(220,38,38,0.2)] border-l-4 border-red-600' 
-                            : 'text-gray-500 hover:bg-red-950/20 hover:text-red-300 border-l-4 border-transparent'
+                            : 'text-gray-500 hover:bg-[#121216] hover:text-red-300 border-l-4 border-transparent'
                         }`}
                       >
                         <Icon size={20} className={isActive ? 'text-red-500' : ''} />
@@ -407,12 +407,12 @@
                 </nav>
               </div>
 
-              <div className="p-4 border-t border-red-950/50 bg-black/60 backdrop-blur-sm">
+              <div className="p-4 border-t border-red-950/50 bg-[#050505]">
                 <div className="mb-4">
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold flex items-center gap-1"><Zap size={10} className="text-yellow-500"/> ONLINE</p>
                   <div className="flex flex-wrap gap-2">
                     {activeUsers.length === 0 ? <span className="text-sm text-gray-700">無人上線</span> : activeUsers.map(u => (
-                      <div key={u.id} className="flex items-center gap-1 bg-black/80 px-2 py-1 rounded border border-gray-800 text-xs shadow-sm">
+                      <div key={u.id} className="flex items-center gap-1 bg-[#121216] px-2 py-1 rounded border border-[#1f1f25] text-xs shadow-sm">
                         <div className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_5px_#dc2626]"></div>
                         <span className={u.role === 'admin_role' ? 'text-red-500 font-bold' : 'text-gray-400'}>{u.name}</span>
                       </div>
@@ -424,7 +424,7 @@
                     <p className="text-sm font-black text-gray-200 group-hover:text-red-500 tracking-wider">{isGuest ? '遊客模式' : appUser.name}</p>
                     <p className="text-[10px] text-gray-600 uppercase tracking-widest">{isGuest ? '僅供預覽' : (allData.roles.find(r => r.id === appUser.role)?.name || '未知權限')}</p>
                   </div>
-                  <button onClick={logout} className="text-gray-600 hover:text-red-500 hover:bg-red-950/50 p-2 rounded-sm transition-colors" title="登出">
+                  <button onClick={logout} className="text-gray-600 hover:text-red-500 hover:bg-[#121216] p-2 rounded-sm transition-colors" title="登出">
                     <LogOut size={18} />
                   </button>
                 </div>
@@ -433,7 +433,7 @@
 
             {/* Main Content Area */}
             <main className="flex-grow flex flex-col h-screen overflow-hidden relative">
-              <header className="bg-black/80 backdrop-blur-md border-b border-red-950/50 p-4 md:px-8 shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex-shrink-0 z-10 flex items-center">
+              <header className="bg-[#0a0a0c] border-b border-red-950/50 p-4 md:px-8 shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex-shrink-0 z-10 flex items-center">
                 <h1 className="text-xl md:text-2xl font-black text-gray-100 tracking-[0.2em] uppercase flex items-center gap-3">
                   <span className="w-2 h-6 bg-red-700 rounded-sm shadow-[0_0_10px_#dc2626]"></span>
                   {navItems.find(i => i.id === activeTab)?.label || '系統'}
@@ -458,7 +458,7 @@
 
             {dialog?.type === 'edit' && <EditDialog dialog={dialog} onClose={() => setDialog(null)} />}
             {dialog && dialog.type !== 'edit' && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-[#050505]/95 z-[100] flex items-center justify-center p-4">
                 <Card className="max-w-sm w-full border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.2)]">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <AlertCircle className="text-red-500"/> {dialog.type === 'confirm' ? '請確認操作' : '系統提示'}
@@ -502,7 +502,7 @@
               <img src="https://i.meee.com.tw/ncmL8U6.png" alt="Logo" className="h-56 md:h-72 mx-auto drop-shadow-[0_0_30px_rgba(220,38,38,0.7)] mb-4" />
             </div>
 
-            <Card className="border-red-950/80 bg-black/80 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.9)]">
+            <Card className="border-red-950/80 bg-[#0a0a0c] shadow-[0_10px_40px_rgba(0,0,0,0.9)]">
               {!selectedUser ? (
                 <div className="space-y-4">
                   <h2 className="text-lg font-black text-gray-400 border-b border-red-950/50 pb-3 mb-5 flex items-center gap-2 tracking-widest uppercase">
@@ -514,7 +514,7 @@
                       return (
                         <button
                           key={u.id} onClick={() => setSelectedUser(u)}
-                          className="p-4 bg-[#0a0a0c] border border-gray-800 rounded-sm hover:border-red-700 hover:bg-red-950/20 flex flex-col items-center justify-center gap-3 group transition-colors shadow-inner"
+                          className="p-4 bg-[#121216] border border-[#1f1f25] rounded-sm hover:border-red-700 hover:bg-[#1a1a1f] flex flex-col items-center justify-center gap-3 group transition-colors shadow-inner"
                         >
                           <Shield size={26} className={isTopAdmin ? 'text-red-600 drop-shadow-[0_0_8px_rgba(220,38,38,0.8)]' : 'text-gray-600 group-hover:text-red-500'} />
                           <span className="text-gray-300 font-black text-sm tracking-wider">{u.name}</span>
@@ -524,10 +524,10 @@
                   </div>
                   {users.length === 0 && <p className="text-gray-600 text-center py-4 text-sm font-bold uppercase tracking-widest">系統初始化中...</p>}
                   
-                  <div className="mt-8 pt-4 border-t border-gray-900">
+                  <div className="mt-8 pt-4 border-t border-[#1f1f25]">
                     <button
                       onClick={onGuest}
-                      className="w-full py-3 text-xs font-black tracking-[0.3em] text-gray-600 hover:text-red-400 bg-black/50 rounded-sm hover:bg-red-950/20 border border-gray-900 hover:border-red-900 transition-colors"
+                      className="w-full py-3 text-xs font-black tracking-[0.3em] text-gray-600 hover:text-red-400 bg-[#050505] rounded-sm hover:bg-[#121216] border border-[#1f1f25] hover:border-red-900 transition-colors"
                     >
                       [ 進入遊客預覽模式 ]
                     </button>
@@ -536,7 +536,7 @@
               ) : (
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 border-b border-red-950/50 pb-4">
-                    <button onClick={() => { setSelectedUser(null); setError(''); setPassword(''); setShowPassword(false); }} className="text-gray-500 hover:text-red-500 p-2 bg-[#050505] border border-gray-800 rounded-sm hover:bg-red-950/30 transition-colors">
+                    <button onClick={() => { setSelectedUser(null); setError(''); setPassword(''); setShowPassword(false); }} className="text-gray-500 hover:text-red-500 p-2 bg-[#050505] border border-[#1f1f25] rounded-sm hover:bg-[#121216] transition-colors">
                       <ChevronLeft size={20} />
                     </button>
                     <div>
@@ -661,7 +661,7 @@
       return (
         <div className="space-y-6">
           {isGuest && (
-            <div className="bg-yellow-900/40 border border-yellow-600/50 text-yellow-300 p-4 rounded-xl flex items-center gap-3 font-bold shadow-lg backdrop-blur-md">
+            <div className="bg-yellow-950/40 border border-yellow-900/50 text-yellow-300 p-4 rounded-xl flex items-center gap-3 font-bold shadow-lg">
               <AlertCircle size={24} />
               遊客預覽模式啟動。核心營運數據已啟動最高級別模糊遮罩，請登入專屬授權帳號以解鎖。
             </div>
@@ -684,19 +684,19 @@
             </Card>
           )}
 
-          <div className="flex flex-col md:flex-row justify-between items-center bg-gray-800/80 p-2 md:p-4 rounded-xl border border-gray-700 shadow-lg gap-4 backdrop-blur-sm">
-            <div className="flex bg-gray-900/80 rounded-lg p-1 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center bg-[#0a0a0c] p-2 md:p-4 rounded-xl border border-[#1f1f25] shadow-lg gap-4">
+            <div className="flex bg-[#121216] rounded-lg p-1 w-full md:w-auto">
               {['week', 'month', 'year'].map(p => (
                 <button
                   key={p} onClick={() => setPeriod(p)}
-                  className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-bold ${period === p ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'}`}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-bold ${period === p ? 'bg-red-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1a1f]'}`}
                 >
                   {p === 'week' ? '單週' : p === 'month' ? '單月' : '年度'}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-4 bg-gray-900/50 px-4 py-2 rounded-lg border border-gray-700/50">
+            <div className="flex items-center gap-4 bg-[#121216] px-4 py-2 rounded-lg border border-[#1f1f25]">
               <button onClick={() => changeDate(-1)} className="p-1 hover:text-red-500"><ChevronLeft size={20} /></button>
               <div className="flex items-center gap-2 text-lg font-bold text-white min-w-[150px] justify-center tracking-wider">
                 <Calendar size={18} className="text-red-500" /> {periodLabel}
@@ -723,7 +723,7 @@
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 bg-gradient-to-br from-gray-800/90 to-gray-900/90 relative overflow-hidden border-gray-700/50">
+            <Card className="lg:col-span-2 bg-[#0a0a0c] relative overflow-hidden border-[#1f1f25]">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2"><BarChart2 size={20} className="text-red-500"/> 營收與淨利走勢</h2>
                 <div className="flex gap-4 text-xs font-bold">
@@ -732,15 +732,15 @@
                 </div>
               </div>
               
-              <div className={`w-full h-[280px] flex items-end gap-[2px] sm:gap-1 relative pt-6 pb-6 border-b border-gray-700 ${blurClass}`}>
+              <div className={`w-full h-[280px] flex items-end gap-[2px] sm:gap-1 relative pt-6 pb-6 border-b border-[#1f1f25] ${blurClass}`}>
                 {[25, 50, 75].map(pct => (
-                  <div key={pct} className="absolute w-full border-b border-gray-700/30 border-dashed z-0" style={{ bottom: `${pct}%` }}></div>
+                  <div key={pct} className="absolute w-full border-b border-[#1f1f25] border-dashed z-0" style={{ bottom: `${pct}%` }}></div>
                 ))}
 
                 {chartData.map((d, idx) => (
                   <div key={idx} className="flex-1 flex flex-col justify-end items-center group relative h-full z-10 cursor-crosshair">
-                    <div className="absolute bottom-full mb-3 hidden group-hover:block bg-gray-900/95 border border-gray-600 text-xs p-3 rounded-lg shadow-2xl backdrop-blur-md pointer-events-none whitespace-nowrap">
-                      <div className="font-bold text-gray-200 mb-1 border-b border-gray-700 pb-1">{d.label}</div>
+                    <div className="absolute bottom-full mb-3 hidden group-hover:block bg-[#121216] border border-[#1f1f25] text-xs p-3 rounded-lg shadow-2xl pointer-events-none whitespace-nowrap z-50">
+                      <div className="font-bold text-gray-200 mb-1 border-b border-[#1f1f25] pb-1">{d.label}</div>
                       <div className="text-blue-400 font-mono">Rev: ${Math.round(d.revenue).toLocaleString()}</div>
                       <div className="text-yellow-400 font-mono">Net: ${Math.round(d.profit).toLocaleString()}</div>
                     </div>
@@ -756,20 +756,20 @@
                 ))}
               </div>
               {isGuest && <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                <span className="bg-red-900/80 text-red-100 px-6 py-2 rounded-full border border-red-500 font-black tracking-widest backdrop-blur-md shadow-[0_0_20px_#dc2626]">DATA CLASSIFIED</span>
+                <span className="bg-red-900/80 text-red-100 px-6 py-2 rounded-full border border-red-500 font-black tracking-widest shadow-[0_0_20px_#dc2626]">DATA CLASSIFIED</span>
               </div>}
             </Card>
 
-            <Card className="lg:col-span-1 border border-gray-700/50">
+            <Card className="lg:col-span-1 border border-[#1f1f25]">
               <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><Trophy size={20} className="text-yellow-500"/> 熱銷排行榜 TOP 5</h2>
               <div className="space-y-3">
                 {topItems.length === 0 ? <p className="text-gray-500 text-center py-10 font-bold">尚無銷售紀錄</p> : 
                   topItems.map((item, index) => (
-                    <div key={item.name} className="flex items-center gap-3 bg-gray-900/50 p-3 rounded-xl border border-gray-800/80 hover:border-gray-600">
+                    <div key={item.name} className="flex items-center gap-3 bg-[#121216] p-3 rounded-xl border border-[#1f1f25] hover:border-[#33333b]">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shadow-inner ${
                         index === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-gray-900 shadow-[0_0_15px_rgba(234,179,8,0.4)]' :
                         index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-gray-900' :
-                        index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white' : 'bg-gray-800 text-gray-500'
+                        index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white' : 'bg-[#1a1a1f] text-gray-500'
                       }`}>{index + 1}</div>
                       <div className="flex-grow min-w-0">
                         <p className="font-bold text-gray-200 truncate">{item.name}</p>
@@ -789,7 +789,7 @@
     };
 
     const POSView = () => {
-      const { items, categories, activities, ingredients, warehouses, handleCheckout, showAlert, logAction, systemConfig, ingredientMap } = useAppContext();
+      const { items, categories, activities, ingredients, warehouses, handleCheckout, showAlert, showConfirm, logAction, systemConfig, ingredientMap } = useAppContext();
       const [cart, setCart] = useState([]);
       const [guestName, setGuestName] = useState('');
       const [selectedCategoryId, setSelectedCategoryId] = useState('all');
@@ -827,7 +827,7 @@
         
         const total = Math.max(0, subtotal - discount);
         return { subtotal, discount, total, totalCost, profit: total - totalCost };
-      }, [cart, selectedActivityId, activeActs, systemConfig.ignoreAllCosts, ingredients]);
+      }, [cart, selectedActivityId, activeActs, systemConfig.ignoreAllCosts, ingredientMap]);
 
       const displayItems = useMemo(() => {
         let filtered = items;
@@ -880,21 +880,111 @@
       };
 
       return (
-        <div className="flex flex-col gap-6 min-h-[calc(100vh-140px)]">
+        <div className="flex flex-col gap-6 h-full min-h-[calc(100vh-140px)]">
           
-          {/* 上方：菜單區域 */}
-          <Card className="flex flex-col p-0 border-gray-700/50 h-[55vh] flex-shrink-0">
-            <div className="flex flex-col sm:flex-row justify-between p-4 bg-gray-900 border-b border-gray-800/80 gap-4 z-10 flex-shrink-0">
+          {/* 上方：點餐明細區塊 */}
+          <Card className="w-full flex-shrink-0 flex flex-col p-5 border-red-900/30 shadow-xl h-auto max-h-[45vh]">
+            <div className="flex justify-between items-center mb-4 border-b border-[#1f1f25] pb-3">
+              <h2 className="text-xl font-black text-white flex items-center gap-2"><ShoppingCart size={20} className="text-red-500"/> 點餐明細</h2>
+              <div className="flex items-center gap-2">
+                <button onClick={clearCart} className="bg-red-950 hover:bg-red-900 text-red-500 hover:text-red-400 text-xs px-2 py-1.5 rounded border border-red-900/50 flex items-center gap-1 transition-colors" title="清空購物車">
+                  <Trash2 size={14}/> 清空
+                </button>
+                <div className="flex items-center gap-2 bg-[#121216] px-3 py-1.5 rounded-lg border border-[#1f1f25] shadow-inner">
+                  <Warehouse size={16} className="text-gray-400" />
+                  <select value={selectedWarehouseId} onChange={e=>setSelectedWarehouseId(e.target.value)} className="bg-transparent text-white font-bold text-sm focus:outline-none">
+                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col lg:flex-row gap-4 h-full overflow-hidden">
+              {/* 左側：購物車列表 */}
+              <div className="flex-grow flex flex-col h-full min-h-[150px]">
+                 <div className="mb-3">
+                  <Input value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="客人名稱 / 桌號 *" className="w-full sm:w-64 font-bold" />
+                </div>
+                <div className="flex-grow overflow-y-auto bg-[#050505] rounded-xl p-2 space-y-2 custom-scrollbar border border-[#1f1f25] shadow-inner">
+                  {cart.length === 0 ? <p className="text-gray-600 text-center py-6 font-bold text-sm">購物車是空的</p> : 
+                    cart.map(item => (
+                      <div key={item.id} className="flex justify-between items-center bg-[#121216] p-2.5 rounded-lg border border-[#1f1f25] shadow-sm">
+                        <div className="flex-grow pr-2 min-w-0">
+                          <p className="text-sm font-bold text-gray-200 truncate">{item.name}</p>
+                          <p className="text-xs text-red-400 font-mono">${item.price}</p>
+                        </div>
+                        <div className="flex items-center gap-3 bg-[#050505] rounded-md p-1 border border-[#1f1f25] flex-shrink-0">
+                          <button onClick={() => updateCart(item, -1)} className="w-7 h-7 bg-[#1a1a1f] rounded hover:bg-[#2a2a30] text-white flex items-center justify-center">-</button>
+                          <span className="w-4 text-center text-sm font-bold">{item.qty}</span>
+                          <button onClick={() => updateCart(item, 1)} className="w-7 h-7 bg-red-600/90 rounded hover:bg-red-500 text-white flex items-center justify-center shadow-sm">+</button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* 右側：結帳資訊 */}
+              <div className="w-full lg:w-72 flex-shrink-0 flex flex-col bg-[#0a0a0c] p-4 rounded-xl border border-[#1f1f25] overflow-hidden">
+                {/* 所需材料區塊 */}
+                <div className="flex-grow overflow-y-auto mb-4 custom-scrollbar bg-[#050505] rounded-lg p-2 border border-[#1f1f25] shadow-inner">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1 border-b border-[#1f1f25] pb-2">
+                    <Package size={14} className="text-yellow-500"/> 訂單所需材料預估
+                  </h4>
+                  {Object.keys(cartUsage).length === 0 ? (
+                    <p className="text-xs text-gray-600 text-center py-4 font-bold">目前無材料消耗紀錄</p>
+                  ) : (
+                    <div className="space-y-1.5 pr-1">
+                      {Object.entries(cartUsage).map(([ingId, qty]) => {
+                        const ing = ingredients.find(i => i.id === ingId);
+                        const wStock = getStockForWarehouse(ing || {}, selectedWarehouseId);
+                        const isShort = wStock < qty;
+                        return (
+                          <div key={ingId} className="flex justify-between items-center text-xs bg-[#121216] px-2 py-1.5 rounded border border-[#1f1f25] shadow-sm">
+                            <span className="text-gray-300 truncate pr-2">{ing?.name || '未知'}</span>
+                            <span className={`font-mono font-bold flex-shrink-0 flex items-center gap-1 ${isShort ? 'text-red-400' : 'text-yellow-400'}`}>
+                              {qty} 單位 {isShort && <span className="text-[10px] bg-red-950/80 text-red-500 border border-red-900/50 px-1 rounded shadow-sm">缺</span>}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-[#1f1f25] flex-shrink-0">
+                  <div className="flex justify-between text-gray-400 text-sm font-mono"><span>Subtotal</span><span>${cartTotals.subtotal}</span></div>
+                  <select value={selectedActivityId} onChange={e=>setSelectedActivityId(e.target.value)} className="w-full bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg text-sm focus:border-red-500">
+                    <option value="none">無活動折扣</option>
+                    {activeActs.map(a => <option key={a.id} value={a.id}>{a.name} ({a.type==='percent'?`${a.value}%`:`-$${a.value}`})</option>)}
+                  </select>
+                  {cartTotals.discount > 0 && <div className="flex justify-between text-yellow-400 text-sm font-bold font-mono pt-1"><span>Discount</span><span>-${Math.round(cartTotals.discount)}</span></div>}
+                  
+                  <div className="flex justify-between items-end pt-2 border-t border-[#1f1f25] mt-2">
+                    <span className="text-gray-400 font-bold uppercase tracking-wider text-sm mb-1">Total</span>
+                    <span className="text-4xl font-black text-red-500 font-mono">${Math.round(cartTotals.total)}</span>
+                  </div>
+
+                  <Button onClick={processOrder} disabled={cart.length===0 || !guestName.trim() || isProcessing} className="w-full py-3 mt-3 text-lg shadow-lg">
+                    {isProcessing ? 'PROCESSING...' : '確認送單'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* 下方：菜單區域 */}
+          <Card className="flex-grow flex flex-col p-0 overflow-hidden border-[#1f1f25]">
+            <div className="flex flex-col sm:flex-row justify-between p-4 bg-[#0a0a0c] border-b border-[#1f1f25] gap-4 z-10 flex-shrink-0">
               <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1 custom-scrollbar">
-                <button onClick={() => setSelectedCategoryId('all')} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedCategoryId === 'all' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>全部</button>
+                <button onClick={() => setSelectedCategoryId('all')} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedCategoryId === 'all' ? 'bg-red-600 text-white' : 'bg-[#121216] text-gray-400 hover:bg-[#1a1a1f] hover:text-white'}`}>全部</button>
                 {[...categories].sort((a,b)=>a.sortOrder-b.sortOrder).map(c => (
-                  <button key={c.id} onClick={() => setSelectedCategoryId(c.id)} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedCategoryId === c.id ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}`}>{c.name}</button>
+                  <button key={c.id} onClick={() => setSelectedCategoryId(c.id)} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap ${selectedCategoryId === c.id ? 'bg-red-600 text-white' : 'bg-[#121216] text-gray-400 hover:bg-[#1a1a1f] hover:text-white'}`}>{c.name}</button>
                 ))}
               </div>
               <Input icon={Search} placeholder="搜尋菜單..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} className="w-full sm:w-64 flex-shrink-0" />
             </div>
 
-            <div className="flex-grow overflow-y-auto p-4 custom-scrollbar bg-gray-950/30">
+            <div className="flex-grow overflow-y-auto p-4 custom-scrollbar bg-[#050505]">
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
                 {displayItems.map(item => {
                   const mkQty = getMakableQty(item);
@@ -902,8 +992,8 @@
                   return (
                     <button
                       key={item.id} onClick={() => updateCart(item, 1)}
-                      className={`bg-gray-800 relative rounded-xl text-left overflow-hidden flex flex-col min-h-[130px] border ${
-                        outOfStock ? 'border-red-900/50 opacity-60 cursor-not-allowed' : 'border-gray-700 hover:border-red-500'
+                      className={`bg-[#121216] relative rounded-xl text-left overflow-hidden flex flex-col min-h-[130px] border ${
+                        outOfStock ? 'border-red-900/50 opacity-60 cursor-not-allowed' : 'border-[#1f1f25] hover:border-red-900'
                       }`}
                     >
                       {/* Item Image Display */}
@@ -915,7 +1005,7 @@
                           onError={(e) => e.target.style.display = 'none'}
                         />
                       )}
-                      {item.imageUrl && <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-gray-900/20 pointer-events-none"></div>}
+                      {item.imageUrl && <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none"></div>}
 
                       {/* Price Top Right */}
                       <div className={`absolute top-0 right-0 text-white text-xs font-black px-3 py-1 rounded-bl-xl shadow-md z-10 ${outOfStock ? 'bg-gray-600' : 'bg-red-600'}`}>
@@ -929,105 +1019,15 @@
                         {/* Makable Qty Bottom Left */}
                         <div className="mt-3">
                           {mkQty !== null ? (
-                            <div className={`text-xs font-bold px-2 py-1 rounded w-fit drop-shadow-md border ${outOfStock ? 'bg-red-950/80 text-red-400 border-red-900/50' : 'bg-gray-900/80 text-green-400 border-gray-700/50'}`}>
+                            <div className={`text-xs font-bold px-2 py-1 rounded w-fit drop-shadow-md border ${outOfStock ? 'bg-red-950/80 text-red-400 border-red-900/50' : 'bg-black text-green-400 border-[#1f1f25]'}`}>
                               {outOfStock ? '庫存耗盡' : `可製作: ${mkQty} 份`}
                             </div>
-                          ) : <div className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest drop-shadow-md bg-gray-900/80 border border-gray-700/50 px-2 py-1 rounded w-fit">無數量限制</div>}
+                          ) : <div className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest drop-shadow-md bg-black border border-[#1f1f25] px-2 py-1 rounded w-fit">無數量限制</div>}
                         </div>
                       </div>
                     </button>
                   );
                 })}
-              </div>
-            </div>
-          </Card>
-
-          {/* 下方：點餐明細區塊 */}
-          <Card className="w-full flex-shrink-0 flex flex-col p-5 border-red-900/30 shadow-xl h-auto">
-            <div className="flex justify-between items-center mb-4 border-b border-gray-700/50 pb-3">
-              <h2 className="text-xl font-black text-white flex items-center gap-2"><ShoppingCart size={20} className="text-red-500"/> 點餐明細</h2>
-              <div className="flex items-center gap-2">
-                <button onClick={clearCart} className="bg-red-950 hover:bg-red-900 text-red-500 hover:text-red-400 text-xs px-2 py-1.5 rounded border border-red-900/50 flex items-center gap-1 transition-colors" title="清空購物車">
-                  <Trash2 size={14}/> 清空
-                </button>
-                <div className="flex items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-700 shadow-inner">
-                  <Warehouse size={16} className="text-gray-400" />
-                  <select value={selectedWarehouseId} onChange={e=>setSelectedWarehouseId(e.target.value)} className="bg-transparent text-white font-bold text-sm focus:outline-none">
-                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* 左側：購物車列表 */}
-              <div className="flex-grow flex flex-col h-full min-h-[150px]">
-                 <div className="mb-3">
-                  <Input value={guestName} onChange={e=>setGuestName(e.target.value)} placeholder="客人名稱 / 桌號 *" className="w-full sm:w-64 font-bold" />
-                </div>
-                <div className="flex-grow bg-black/40 rounded-xl p-2 space-y-2 border border-gray-800 shadow-inner">
-                  {cart.length === 0 ? <p className="text-gray-600 text-center py-6 font-bold text-sm">購物車是空的</p> : 
-                    cart.map(item => (
-                      <div key={item.id} className="flex justify-between items-center bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/50 shadow-sm">
-                        <div className="flex-grow pr-2 min-w-0">
-                          <p className="text-sm font-bold text-gray-200 truncate">{item.name}</p>
-                          <p className="text-xs text-red-400 font-mono">${item.price}</p>
-                        </div>
-                        <div className="flex items-center gap-3 bg-gray-900/80 rounded-md p-1 border border-gray-700/50 flex-shrink-0">
-                          <button onClick={() => updateCart(item, -1)} className="w-7 h-7 bg-gray-800 rounded hover:bg-gray-700 text-white flex items-center justify-center">-</button>
-                          <span className="w-4 text-center text-sm font-bold">{item.qty}</span>
-                          <button onClick={() => updateCart(item, 1)} className="w-7 h-7 bg-red-600/90 rounded hover:bg-red-500 text-white flex items-center justify-center shadow-sm">+</button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* 右側：結帳資訊 */}
-              <div className="w-full lg:w-72 flex-shrink-0 flex flex-col bg-gray-900/50 p-4 rounded-xl border border-gray-700/80">
-                {/* 所需材料區塊 */}
-                <div className="mb-4 bg-gray-950/30 rounded-lg p-2 border border-gray-800/50 shadow-inner">
-                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1 border-b border-gray-800 pb-2">
-                    <Package size={14} className="text-yellow-500"/> 訂單所需材料預估
-                  </h4>
-                  {Object.keys(cartUsage).length === 0 ? (
-                    <p className="text-xs text-gray-600 text-center py-4 font-bold">目前無材料消耗紀錄</p>
-                  ) : (
-                    <div className="space-y-1.5 pr-1">
-                      {Object.entries(cartUsage).map(([ingId, qty]) => {
-                        const ing = ingredients.find(i => i.id === ingId);
-                        const wStock = getStockForWarehouse(ing || {}, selectedWarehouseId);
-                        const isShort = wStock < qty;
-                        return (
-                          <div key={ingId} className="flex justify-between items-center text-xs bg-gray-800/80 px-2 py-1.5 rounded border border-gray-700/50 shadow-sm">
-                            <span className="text-gray-300 truncate pr-2">{ing?.name || '未知'}</span>
-                            <span className={`font-mono font-bold flex-shrink-0 flex items-center gap-1 ${isShort ? 'text-red-400' : 'text-yellow-400'}`}>
-                              {qty} 單位 {isShort && <span className="text-[10px] bg-red-950/80 text-red-500 border border-red-900/50 px-1 rounded shadow-sm">缺</span>}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2 pt-3 border-t border-gray-700/80 flex-shrink-0">
-                  <div className="flex justify-between text-gray-400 text-sm font-mono"><span>Subtotal</span><span>${cartTotals.subtotal}</span></div>
-                  <select value={selectedActivityId} onChange={e=>setSelectedActivityId(e.target.value)} className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:border-red-500">
-                    <option value="none">無活動折扣</option>
-                    {activeActs.map(a => <option key={a.id} value={a.id}>{a.name} ({a.type==='percent'?`${a.value}%`:`-$${a.value}`})</option>)}
-                  </select>
-                  {cartTotals.discount > 0 && <div className="flex justify-between text-yellow-400 text-sm font-bold font-mono pt-1"><span>Discount</span><span>-${Math.round(cartTotals.discount)}</span></div>}
-                  
-                  <div className="flex justify-between items-end pt-2 border-t border-gray-700/80 mt-2">
-                    <span className="text-gray-400 font-bold uppercase tracking-wider text-sm mb-1">Total</span>
-                    <span className="text-4xl font-black text-red-500 font-mono">${Math.round(cartTotals.total)}</span>
-                  </div>
-
-                  <Button onClick={processOrder} disabled={cart.length===0 || !guestName.trim() || isProcessing} className="w-full py-3 mt-3 text-lg shadow-lg">
-                    {isProcessing ? 'PROCESSING...' : '確認送單'}
-                  </Button>
-                </div>
               </div>
             </div>
           </Card>
@@ -1048,10 +1048,10 @@
       return (
         <Card>
           <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><ListOrdered className="text-blue-500"/> 記帳歷史紀錄</h2>
-          <div className="overflow-x-auto custom-scrollbar border border-gray-700/50 rounded-xl">
+          <div className="overflow-x-auto custom-scrollbar border border-[#1f1f25] rounded-xl">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-900/80 border-b border-gray-700">
+                <tr className="bg-[#0a0a0c] border-b border-[#1f1f25]">
                   <th className="p-4 text-gray-400 font-bold text-sm">時間</th>
                   <th className="p-4 text-gray-400 font-bold text-sm">桌號/客人</th>
                   <th className="p-4 text-gray-400 font-bold text-sm">明細</th>
@@ -1061,9 +1061,9 @@
                   <th className="p-4 text-gray-400 font-bold text-sm text-center">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60 bg-gray-800/30">
+              <tbody className="divide-y divide-[#1f1f25] bg-[#050505]">
                 {orders.map(o => (
-                  <tr key={o.id} className="hover:bg-gray-700/30">
+                  <tr key={o.id} className="hover:bg-[#121216]">
                     <td className="p-4 text-sm text-gray-400 font-mono">{new Date(o.timestamp).toLocaleString()}</td>
                     <td className="p-4 font-bold text-gray-200">
                       {o.guestName}
@@ -1074,7 +1074,7 @@
                     <td className="p-4 text-right text-yellow-500/80 font-mono">-{Math.round(o.discountAmount || 0)}</td>
                     <td className="p-4 text-right font-black text-red-400 font-mono">${Math.round(o.total)}</td>
                     <td className="p-4 text-center">
-                      <button onClick={() => handleCopyBill(o)} className="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-gray-700/50" title="複製帳單">
+                      <button onClick={() => handleCopyBill(o)} className="text-gray-400 hover:text-white bg-[#121216] hover:bg-[#1a1a1f] p-2 rounded-lg border border-[#1f1f25]" title="複製帳單">
                         <Copy size={16}/>
                       </button>
                     </td>
@@ -1157,14 +1157,14 @@
 
       return (
         <Card className="max-w-5xl mx-auto">
-          <div className="flex border-b border-gray-700/50 mb-6">
+          <div className="flex border-b border-[#1f1f25] mb-6">
             <button onClick={() => setActiveTab('items')} className={`px-6 py-3 font-bold border-b-2 ${activeTab === 'items' ? 'border-red-500 text-red-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>品項與配方管理</button>
             <button onClick={() => setActiveTab('categories')} className={`px-6 py-3 font-bold border-b-2 ${activeTab === 'categories' ? 'border-red-500 text-red-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>大分類管理</button>
           </div>
 
           {activeTab === 'categories' && (
             <div>
-              <div className="flex gap-3 mb-6 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+              <div className="flex gap-3 mb-6 bg-[#0a0a0c] p-4 rounded-xl border border-[#1f1f25]">
                 <Input value={catName} onChange={e=>setCatName(e.target.value)} placeholder="新分類名稱" className="flex-grow" />
                 <Button onClick={addCat}><Plus size={18}/> 新增分類</Button>
               </div>
@@ -1172,8 +1172,8 @@
                 <div className="flex justify-between items-center w-full group">
                   <span className="font-bold text-white group-hover:text-red-400">{cat.name}</span>
                   <div className="flex gap-2">
-                    <button onClick={() => editCat(cat)} className="text-gray-500 hover:text-yellow-500 p-2 bg-gray-900 rounded"><Edit size={16}/></button>
-                    <button onClick={() => delCat(cat.id, cat.name)} className="text-gray-500 hover:text-red-500 p-2 bg-gray-900 rounded"><Trash2 size={16}/></button>
+                    <button onClick={() => editCat(cat)} className="text-gray-500 hover:text-yellow-500 p-2 bg-[#050505] rounded"><Edit size={16}/></button>
+                    <button onClick={() => delCat(cat.id, cat.name)} className="text-gray-500 hover:text-red-500 p-2 bg-[#050505] rounded"><Trash2 size={16}/></button>
                   </div>
                 </div>
               )}/>
@@ -1182,13 +1182,13 @@
 
           {activeTab === 'items' && (
             <div>
-              <div className={`p-5 rounded-xl border mb-6 shadow-inner transition-colors ${editingItemId ? 'bg-yellow-900/20 border-yellow-700/50' : 'bg-gray-900/50 border-gray-800'}`}>
+              <div className={`p-5 rounded-xl border mb-6 shadow-inner transition-colors ${editingItemId ? 'bg-yellow-950/20 border-yellow-900/50' : 'bg-[#0a0a0c] border-[#1f1f25]'}`}>
                 <h3 className={`text-sm font-bold mb-3 flex items-center gap-2 ${editingItemId ? 'text-yellow-500' : 'text-gray-400'}`}>
                   {editingItemId ? <Edit size={16}/> : <Plus size={16}/>} 
                   {editingItemId ? `正在編輯：${itemData.name}` : '新增品項與配方設定'}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                  <select value={itemData.cat} onChange={e=>setItemData({...itemData, cat: e.target.value})} className="bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:border-red-500">
+                  <select value={itemData.cat} onChange={e=>setItemData({...itemData, cat: e.target.value})} className="bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg focus:border-red-500">
                     <option value="" disabled>選擇分類...</option>
                     {sortedCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -1197,10 +1197,10 @@
                   <Input value={itemData.imageUrl} onChange={e=>setItemData({...itemData, imageUrl: e.target.value})} placeholder="餐點圖片網址 URL (選填，可留空)" icon={ImageIcon} className="md:col-span-4" />
                 </div>
                 
-                <div className="border-t border-gray-700/50 pt-4 bg-gray-950/30 p-4 rounded-lg">
+                <div className="border-t border-[#1f1f25] pt-4 bg-[#050505] p-4 rounded-lg">
                   <h4 className="text-xs font-bold text-yellow-500/80 mb-3 uppercase tracking-wider">綁定出餐扣除的食材庫存</h4>
                   <div className="flex flex-wrap md:flex-nowrap gap-3 mb-3">
-                    <select value={ingSelection.id} onChange={e=>setIngSelection({...ingSelection, id: e.target.value})} className="flex-grow bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm">
+                    <select value={ingSelection.id} onChange={e=>setIngSelection({...ingSelection, id: e.target.value})} className="flex-grow bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg text-sm">
                       <option value="" disabled>選擇庫存食材...</option>
                       {ingredients.map(ig => <option key={ig.id} value={ig.id}>{ig.name} (本:${ig.cost})</option>)}
                     </select>
@@ -1214,7 +1214,7 @@
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {itemData.recipe.map((r, i) => (
-                      <div key={i} className="bg-gray-800/80 border border-gray-600 rounded-md px-3 py-1 text-sm flex items-center gap-2 shadow-sm">
+                      <div key={i} className="bg-[#121216] border border-[#1f1f25] rounded-md px-3 py-1 text-sm flex items-center gap-2 shadow-sm">
                         <span className="text-gray-200">{r.name} <span className="text-red-400 font-bold">x{r.qty}</span></span>
                         <button onClick={() => setItemData(p => ({...p, recipe: p.recipe.filter((_, idx)=>idx!==i)}))} className="text-gray-500 hover:text-red-400"><X size={14}/></button>
                       </div>
@@ -1240,12 +1240,12 @@
                   <div className={`flex justify-between items-center w-full group ${editingItemId === item.id ? 'opacity-50' : ''}`}>
                     <div className="min-w-0 pr-4 flex items-center gap-3">
                       {item.imageUrl ? (
-                        <img src={item.imageUrl} alt="" className="w-10 h-10 rounded object-cover border border-gray-600 bg-gray-800" onError={(e)=>e.target.style.display='none'}/>
-                      ) : <div className="w-10 h-10 rounded bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-600"><ImageIcon size={18}/></div>}
+                        <img src={item.imageUrl} alt="" className="w-10 h-10 rounded object-cover border border-[#1f1f25] bg-[#050505]" onError={(e)=>e.target.style.display='none'}/>
+                      ) : <div className="w-10 h-10 rounded bg-[#050505] border border-[#1f1f25] flex items-center justify-center text-gray-600"><ImageIcon size={18}/></div>}
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-white text-lg truncate group-hover:text-red-400">{item.name}</span>
-                          <span className="text-[10px] bg-gray-700/80 text-gray-300 px-2 py-0.5 rounded-full border border-gray-600 truncate">{categoryMap[item.categoryId]?.name || '未分類'}</span>
+                          <span className="text-[10px] bg-[#121216] text-gray-300 px-2 py-0.5 rounded-full border border-[#1f1f25] truncate">{categoryMap[item.categoryId]?.name || '未分類'}</span>
                         </div>
                         <div className="text-xs text-gray-500 truncate">
                           {item.recipe?.length > 0 ? item.recipe.map(r=>`${r.name}x${r.qty}`).join(' | ') : <span className="text-yellow-700 font-bold">無綁定配方</span>}
@@ -1257,9 +1257,9 @@
                         <p className="text-white font-bold">${item.price}</p>
                         <p className="text-red-400/80 text-xs text-right">本:${cost}</p>
                       </div>
-                      <div className="flex gap-1 border-l border-gray-700/50 pl-3">
-                        <button onClick={() => startEditItem(item)} className="text-gray-500 hover:text-yellow-500 p-2 bg-gray-900 rounded"><Edit size={16}/></button>
-                        <button onClick={() => delItem(item.id, item.name)} className="text-gray-500 hover:text-red-500 p-2 bg-gray-900 rounded"><Trash2 size={16}/></button>
+                      <div className="flex gap-1 border-l border-[#1f1f25] pl-3">
+                        <button onClick={() => startEditItem(item)} className="text-gray-500 hover:text-yellow-500 p-2 bg-[#050505] rounded"><Edit size={16}/></button>
+                        <button onClick={() => delItem(item.id, item.name)} className="text-gray-500 hover:text-red-500 p-2 bg-[#050505] rounded"><Trash2 size={16}/></button>
                       </div>
                     </div>
                   </div>
@@ -1283,15 +1283,15 @@
         if(type === 'end') setDraggedIdx(null);
       };
       return <div className="space-y-2">{items.map((item, i) => (
-        <div key={item.id} draggable onDragStart={e=>handleDrag(e,i,'start')} onDragEnter={e=>handleDrag(e,i,'enter')} onDragEnd={e=>handleDrag(e,i,'end')} onDragOver={e=>e.preventDefault()} className="flex items-stretch bg-gray-800/80 border border-gray-700/50 rounded-xl group hover:border-gray-500/50 shadow-sm">
-          <div className="px-3 flex items-center bg-gray-900/50 border-r border-gray-700/50 cursor-grab active:cursor-grabbing text-gray-600 hover:text-red-400 rounded-l-xl"><GripVertical size={18}/></div>
+        <div key={item.id} draggable onDragStart={e=>handleDrag(e,i,'start')} onDragEnter={e=>handleDrag(e,i,'enter')} onDragEnd={e=>handleDrag(e,i,'end')} onDragOver={e=>e.preventDefault()} className="flex items-stretch bg-[#121216] border border-[#1f1f25] rounded-xl group hover:border-[#2a2a30] shadow-sm">
+          <div className="px-3 flex items-center bg-[#0a0a0c] border-r border-[#1f1f25] cursor-grab active:cursor-grabbing text-gray-600 hover:text-red-400 rounded-l-xl"><GripVertical size={18}/></div>
           <div className="flex-grow p-4 min-w-0">{renderItem(item)}</div>
         </div>
       ))}</div>;
     };
 
     const InventoryManager = () => {
-      const { ingredients, items, warehouses, showAlert, showEdit, logAction, systemConfig, ingredientMap } = useAppContext();
+      const { ingredients, items, warehouses, showAlert, showConfirm, showEdit, logAction, systemConfig, ingredientMap } = useAppContext();
       const [activeTab, setActiveTab] = useState('inventory'); 
       
       const [newIng, setNewIng] = useState({ name: '', cost: '', ignore: false });
@@ -1380,7 +1380,7 @@
 
       return (
         <div className="space-y-6">
-          <div className="flex border-b border-gray-700/50 mb-2 max-w-7xl mx-auto">
+          <div className="flex border-b border-[#1f1f25] mb-2 max-w-7xl mx-auto">
             <button onClick={() => setActiveTab('inventory')} className={`px-6 py-3 font-bold border-b-2 ${activeTab === 'inventory' ? 'border-red-500 text-red-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>庫存進退貨</button>
             <button onClick={() => setActiveTab('calculator')} className={`px-6 py-3 font-bold border-b-2 flex items-center gap-2 ${activeTab === 'calculator' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}><Calculator size={16}/> 採購預測計算機</button>
           </div>
@@ -1388,12 +1388,12 @@
           {activeTab === 'inventory' && (
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
               <div className="xl:col-span-1 space-y-6">
-                <Card className="border-gray-700/50">
-                  <h2 className="text-lg font-bold text-white mb-4 border-b border-gray-700/50 pb-2"><span className="text-red-500 font-black pr-2">1.</span>建立新食材種類</h2>
+                <Card className="border-[#1f1f25]">
+                  <h2 className="text-lg font-bold text-white mb-4 border-b border-[#1f1f25] pb-2"><span className="text-red-500 font-black pr-2">1.</span>建立新食材種類</h2>
                   <div className="space-y-4">
                     <Input value={newIng.name} onChange={e=>setNewIng({...newIng,name:e.target.value})} placeholder="食材名稱 (例: 伏特加)" />
                     <Input type="number" value={newIng.cost} onChange={e=>setNewIng({...newIng,cost:e.target.value})} placeholder="初始單件成本 $" />
-                    <label className="flex items-center gap-2 p-2 bg-gray-900/50 rounded-lg cursor-pointer text-sm text-gray-300 border border-gray-800">
+                    <label className="flex items-center gap-2 p-2 bg-[#050505] rounded-lg cursor-pointer text-sm text-gray-300 border border-[#1f1f25]">
                       <input type="checkbox" checked={newIng.ignore} onChange={e=>setNewIng({...newIng,ignore:e.target.checked})} className="w-4 h-4 accent-red-600"/>
                       暫時不計算此成本
                     </label>
@@ -1402,16 +1402,16 @@
                 </Card>
 
                 <Card className="border-red-900/30 shadow-[0_0_20px_rgba(220,38,38,0.05)]">
-                  <h2 className="text-lg font-bold text-white mb-4 border-b border-gray-700/50 pb-2"><span className="text-red-500 font-black pr-2">2.</span>進出貨與公帳扣除作業</h2>
+                  <h2 className="text-lg font-bold text-white mb-4 border-b border-[#1f1f25] pb-2"><span className="text-red-500 font-black pr-2">2.</span>進出貨與公帳扣除作業</h2>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-2 bg-gray-900 p-2 rounded-lg border border-gray-700">
+                    <div className="flex items-center gap-2 mb-2 bg-[#121216] p-2 rounded-lg border border-[#1f1f25]">
                       <Warehouse size={16} className="text-gray-400" />
                       <select value={stockOp.warehouseId} onChange={e=>setStockOp({...stockOp, warehouseId: e.target.value})} className="w-full bg-transparent text-white focus:outline-none font-bold text-sm">
                         {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                       </select>
                     </div>
                     
-                    <select value={stockOp.id} onChange={e=>setStockOp({...stockOp,id:e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg focus:border-red-500">
+                    <select value={stockOp.id} onChange={e=>setStockOp({...stockOp,id:e.target.value})} className="w-full bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg focus:border-red-500">
                       <option value="" disabled>請選擇要進退貨的食材...</option>
                       {[...ingredients].sort((a,b)=>a.name.localeCompare(b.name)).map(i => {
                         const wStock = getStockForWarehouse(i, stockOp.warehouseId);
@@ -1424,7 +1424,7 @@
                       <Input type="number" value={stockOp.totalSpent} onChange={e=>setStockOp({...stockOp,totalSpent:e.target.value})} placeholder="總花費(公款) $" className="w-1/2" />
                     </div>
                     {Number(stockOp.qty) > 0 && stockOp.totalSpent !== '' && (
-                      <div className="text-xs text-yellow-500 font-bold bg-yellow-900/20 p-2 rounded border border-yellow-700/50">
+                      <div className="text-xs text-yellow-500 font-bold bg-yellow-950/20 p-2 rounded border border-yellow-900/50">
                         系統自動結算本次單位成本: ${(Number(stockOp.totalSpent) / Number(stockOp.qty)).toFixed(2)} / 件
                       </div>
                     )}
@@ -1434,29 +1434,29 @@
                 </Card>
               </div>
 
-              <Card className="xl:col-span-2 border-gray-700/50 p-0 overflow-hidden flex flex-col">
-                <div className="flex justify-between items-center p-5 border-b border-gray-700/50 bg-gray-800/80">
+              <Card className="xl:col-span-2 border-[#1f1f25] p-0 overflow-hidden flex flex-col">
+                <div className="flex justify-between items-center p-5 border-b border-[#1f1f25] bg-[#0a0a0c]">
                   <h2 className="text-lg font-bold text-white">當前食材庫存狀態</h2>
                   <Button variant="danger" onClick={clearAllIngs} className="text-xs px-3 py-1 shadow-md border-red-800"><Trash2 size={14}/> 刪除全部食材</Button>
                 </div>
                 <div className="overflow-y-auto flex-grow custom-scrollbar">
                   <table className="w-full text-left">
-                    <thead className="bg-gray-900 sticky top-0 z-10 text-xs uppercase tracking-wider text-gray-500 font-bold shadow-md">
+                    <thead className="bg-[#0a0a0c] sticky top-0 z-10 text-xs uppercase tracking-wider text-gray-500 font-bold border-b border-[#1f1f25]">
                       <tr>
-                        <th className="p-4 border-b border-gray-700">食材名稱</th>
-                        <th className="p-4 border-b border-gray-700">庫存餘額 (各區)</th>
-                        <th className="p-4 border-b border-gray-700 text-right">單位均價</th>
-                        <th className="p-4 border-b border-gray-700 text-right">總庫存價值</th>
-                        <th className="p-4 border-b border-gray-700 text-center">操作</th>
+                        <th className="p-4 border-b border-[#1f1f25]">食材名稱</th>
+                        <th className="p-4 border-b border-[#1f1f25]">庫存餘額 (各區)</th>
+                        <th className="p-4 border-b border-[#1f1f25] text-right">單位均價</th>
+                        <th className="p-4 border-b border-[#1f1f25] text-right">總庫存價值</th>
+                        <th className="p-4 border-b border-[#1f1f25] text-center">操作</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800/60 font-mono text-sm">
+                    <tbody className="divide-y divide-[#1f1f25] bg-[#050505] font-mono text-sm">
                       {[...ingredients].sort((a,b)=>a.name.localeCompare(b.name)).map(ing => {
                         const totalStock = ing.stock || 0;
                         const isLow = totalStock <= 5;
                         const ignore = systemConfig.ignoreAllCosts || ing.ignoreCost;
                         return (
-                          <tr key={ing.id} className={`hover:bg-gray-700/30 ${isLow ? 'bg-red-900/10' : ''}`}>
+                          <tr key={ing.id} className={`hover:bg-[#121216] ${isLow ? 'bg-red-950/20' : ''}`}>
                             <td className="p-4 font-bold text-gray-200 font-sans flex items-center gap-2">
                               {isLow && <AlertTriangle size={14} className="text-red-500"/>} {ing.name}
                             </td>
@@ -1465,7 +1465,7 @@
                               <div className="flex flex-wrap gap-1 text-[10px] text-gray-400">
                                 {warehouses.map(w => {
                                   const wStock = getStockForWarehouse(ing, w.id);
-                                  return wStock > 0 ? <span key={w.id} className="bg-gray-800 border border-gray-700 px-1.5 py-0.5 rounded">{w.name}: {wStock}</span> : null;
+                                  return wStock > 0 ? <span key={w.id} className="bg-[#121216] border border-[#1f1f25] px-1.5 py-0.5 rounded">{w.name}: {wStock}</span> : null;
                                 })}
                               </div>
                             </td>
@@ -1475,8 +1475,8 @@
                             <td className="p-4 text-right font-bold text-yellow-500/80">{ignore ? '$0' : `$${totalStock * (ing.cost || 0)}`}</td>
                             <td className="p-4 text-center">
                               <div className="flex justify-center gap-1">
-                                <button onClick={() => editIng(ing)} className="text-gray-500 hover:text-yellow-400 bg-gray-900 p-2 rounded" title="編輯"><Edit size={16}/></button>
-                                <button onClick={() => deleteIng(ing)} className="text-gray-500 hover:text-red-500 bg-gray-900 p-2 rounded" title="刪除"><Trash2 size={16}/></button>
+                                <button onClick={() => editIng(ing)} className="text-gray-500 hover:text-yellow-400 bg-[#0a0a0c] p-2 rounded" title="編輯"><Edit size={16}/></button>
+                                <button onClick={() => deleteIng(ing)} className="text-gray-500 hover:text-red-500 bg-[#0a0a0c] p-2 rounded" title="刪除"><Trash2 size={16}/></button>
                               </div>
                             </td>
                           </tr>
@@ -1497,10 +1497,10 @@
                   <h2 className="text-2xl font-black text-white mb-2 flex items-center gap-3"><Calculator className="text-yellow-500"/> 採購需求預測</h2>
                   <p className="text-gray-400 text-sm mb-6">選擇特定菜單品項，並輸入預計要銷售的份數，系統將展開配方並幫您計算所需採購的食材與初估花費。</p>
 
-                  <div className="flex flex-col md:flex-row gap-4 mb-8 bg-gray-900/60 p-4 rounded-xl border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex flex-col md:flex-row gap-4 mb-8 bg-[#0a0a0c] p-4 rounded-xl border border-[#1f1f25]">
                     <div className="flex-grow">
                       <label className="block text-xs text-gray-500 uppercase font-bold mb-1 tracking-wider">目標品項 Target Item</label>
-                      <select value={calcItem} onChange={e=>setCalcItem(e.target.value)} className="w-full bg-gray-800 border border-gray-700 text-white px-4 py-3 rounded-lg focus:border-yellow-500 text-lg font-bold">
+                      <select value={calcItem} onChange={e=>setCalcItem(e.target.value)} className="w-full bg-[#121216] border border-[#1f1f25] text-white px-4 py-3 rounded-lg focus:border-yellow-500 text-lg font-bold">
                         <option value="">-- 請選擇品項 --</option>
                         {[...items].filter(i=>i.recipe?.length>0).sort((a,b)=>a.name.localeCompare(b.name)).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                       </select>
@@ -1512,21 +1512,21 @@
                   </div>
 
                   {selectedRecipeItem ? (
-                    <div className="bg-gray-950/50 rounded-xl border border-gray-800 overflow-hidden">
-                      <div className="p-4 bg-gray-800/80 border-b border-gray-700 flex justify-between items-center">
+                    <div className="bg-[#050505] rounded-xl border border-[#1f1f25] overflow-hidden">
+                      <div className="p-4 bg-[#0a0a0c] border-b border-[#1f1f25] flex justify-between items-center">
                         <h3 className="font-bold text-gray-200 text-lg">{selectedRecipeItem.name} <span className="text-sm font-normal text-gray-400">x {calcPortions} 份的食材拆解</span></h3>
                       </div>
                       <table className="w-full text-left text-sm font-mono">
-                        <thead className="bg-gray-900 text-gray-500 text-xs uppercase tracking-widest">
+                        <thead className="bg-[#050505] text-gray-500 text-xs uppercase tracking-widest border-b border-[#1f1f25]">
                           <tr>
-                            <th className="p-3 pl-5 border-b border-gray-800 font-sans font-bold">所需食材</th>
-                            <th className="p-3 border-b border-gray-800 text-right">需求總量</th>
-                            <th className="p-3 border-b border-gray-800 text-right">總庫存</th>
-                            <th className="p-3 border-b border-gray-800 text-right text-red-400 bg-red-950/20">缺口數量</th>
-                            <th className="p-3 pr-5 border-b border-gray-800 text-right text-yellow-500 bg-yellow-950/20">預估採購額</th>
+                            <th className="p-3 pl-5 border-b border-[#1f1f25] font-sans font-bold">所需食材</th>
+                            <th className="p-3 border-b border-[#1f1f25] text-right">需求總量</th>
+                            <th className="p-3 border-b border-[#1f1f25] text-right">總庫存</th>
+                            <th className="p-3 border-b border-[#1f1f25] text-right text-red-400 bg-red-950/20">缺口數量</th>
+                            <th className="p-3 pr-5 border-b border-[#1f1f25] text-right text-yellow-500 bg-yellow-950/20">預估採購額</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800">
+                        <tbody className="divide-y divide-[#1f1f25] bg-[#050505]">
                           {selectedRecipeItem.recipe.map(req => {
                             const ing = ingredientMap[req.ingredientId];
                             const requiredQty = req.qty * calcPortions;
@@ -1534,8 +1534,8 @@
                             const shortage = Math.max(0, requiredQty - currentStock);
                             const estCost = shortage * (ing?.cost || 0);
                             return (
-                              <tr key={req.ingredientId} className="hover:bg-gray-800/30">
-                                <td className="p-3 pl-5 font-sans text-gray-300 font-bold">{req.name} <span className="text-[10px] text-gray-600 bg-gray-900 px-1 rounded ml-1">配方:x{req.qty}</span></td>
+                              <tr key={req.ingredientId} className="hover:bg-[#121216]">
+                                <td className="p-3 pl-5 font-sans text-gray-300 font-bold">{req.name} <span className="text-[10px] text-gray-600 bg-[#0a0a0c] px-1 rounded ml-1">配方:x{req.qty}</span></td>
                                 <td className="p-3 text-right text-white">{requiredQty}</td>
                                 <td className="p-3 text-right text-green-400">{currentStock}</td>
                                 <td className="p-3 text-right font-black text-red-500 bg-red-950/10">{shortage > 0 ? shortage : '-'}</td>
@@ -1544,7 +1544,7 @@
                             );
                           })}
                         </tbody>
-                        <tfoot className="bg-gray-900 border-t-2 border-gray-700">
+                        <tfoot className="bg-[#0a0a0c] border-t-2 border-[#1f1f25]">
                           <tr>
                             <td colSpan="4" className="p-4 text-right font-sans font-black text-gray-400">總計預估採購預算：</td>
                             <td className="p-4 pr-5 text-right font-black text-yellow-400 text-lg">
@@ -1559,7 +1559,7 @@
                       </table>
                     </div>
                   ) : (
-                    <div className="text-center p-10 border border-gray-800 border-dashed rounded-xl text-gray-600 bg-gray-900/30">
+                    <div className="text-center p-10 border border-[#1f1f25] border-dashed rounded-xl text-gray-600 bg-[#050505]">
                       <Calculator size={48} className="mx-auto mb-3 opacity-20" />
                       <p>請於上方選單指定擁有配方的品項</p>
                     </div>
@@ -1594,11 +1594,11 @@
 
       return (
         <div className="space-y-6 max-w-7xl mx-auto">
-          <Card className="border-gray-700/50">
+          <Card className="border-[#1f1f25]">
             <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><Zap className="text-yellow-500"/> 新增活動優惠</h2>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end bg-[#050505] p-4 rounded-xl border border-[#1f1f25]">
               <div className="md:col-span-2"><Input value={actData.name} onChange={e=>setActData({...actData,name:e.target.value})} placeholder="活動名稱 (例: 歡樂時光)" /></div>
-              <div className="md:col-span-1"><select value={actData.type} onChange={e=>setActData({...actData,type:e.target.value})} className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg"><option value="percent">打折(%)</option><option value="amount">折抵($)</option></select></div>
+              <div className="md:col-span-1"><select value={actData.type} onChange={e=>setActData({...actData,type:e.target.value})} className="w-full bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg"><option value="percent">打折(%)</option><option value="amount">折抵($)</option></select></div>
               <div className="md:col-span-1"><Input type="number" value={actData.value} onChange={e=>setActData({...actData,value:e.target.value})} placeholder="數值" /></div>
               <div className="md:col-span-1"><Input type="datetime-local" value={actData.start} onChange={e=>setActData({...actData,start:e.target.value})} className="text-sm px-2"/></div>
               <div className="md:col-span-1"><Input type="datetime-local" value={actData.end} onChange={e=>setActData({...actData,end:e.target.value})} className="text-sm px-2"/></div>
@@ -1617,13 +1617,13 @@
               return (
                 <Card key={act.id} className={`border-l-4 ${act.isActive && ongoing ? 'border-l-green-500 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-l-gray-600'} relative p-5`}>
                   <div className="absolute top-4 right-4 flex gap-1">
-                    <button onClick={() => edit(act)} className="p-2 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg"><Edit size={16}/></button>
-                    <button onClick={() => toggle(act)} className="p-2 hover:bg-gray-700 text-gray-400 rounded-lg">{act.isActive ? <Square size={16} className="text-red-400"/> : <Play size={16} className="text-green-400"/>}</button>
-                    <button onClick={() => del(act.id, act.name)} className="p-2 hover:bg-gray-700 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                    <button onClick={() => edit(act)} className="p-2 hover:bg-[#121216] text-gray-400 hover:text-white rounded-lg"><Edit size={16}/></button>
+                    <button onClick={() => toggle(act)} className="p-2 hover:bg-[#121216] text-gray-400 rounded-lg">{act.isActive ? <Square size={16} className="text-red-400"/> : <Play size={16} className="text-green-400"/>}</button>
+                    <button onClick={() => del(act.id, act.name)} className="p-2 hover:bg-[#121216] text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
                   </div>
                   <h3 className="text-lg font-black text-white pr-24 mb-1">{act.name}</h3>
                   <p className={`text-sm font-black mb-4 tracking-widest ${sColor}`}>{sText}</p>
-                  <div className="text-sm bg-gray-900/80 p-3 rounded-lg border border-gray-800 shadow-inner">
+                  <div className="text-sm bg-[#050505] p-3 rounded-lg border border-[#1f1f25] shadow-inner">
                     <p className="font-mono text-gray-400 mb-2">Benefit: <span className="text-yellow-400 font-bold text-base">{act.type === 'percent' ? `${act.value}% 折扣` : `-$${act.value}`}</span></p>
                     <p className="text-xs text-gray-500 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> {new Date(act.startTime).toLocaleString()}</p>
                     <p className="text-xs text-gray-500 flex items-center gap-2 mt-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> {new Date(act.endTime).toLocaleString()}</p>
@@ -1663,9 +1663,9 @@
             <Card className="border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.15)] mb-6">
               <h2 className="text-xl font-bold text-yellow-500 mb-4 flex items-center gap-2"><Shield size={20} /> 編輯權限矩陣 - {editing.name}</h2>
               <Input value={editing.name} onChange={e=>setEditing({...editing, name: e.target.value})} disabled={editing.isSystem} className="max-w-sm mb-4" />
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6 bg-[#050505] p-4 rounded-xl border border-[#1f1f25]">
                 {PERMISSION_LIST.map(p => (
-                  <label key={p.id} className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${editing.permissions[p.id] ? 'bg-red-900/20 border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.1)]' : 'bg-gray-800 border-gray-700/50 hover:bg-gray-700'}`}>
+                  <label key={p.id} className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${editing.permissions[p.id] ? 'bg-red-950/20 border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.1)]' : 'bg-[#121216] border-[#1f1f25] hover:bg-[#1a1a1f]'}`}>
                     <input type="checkbox" checked={editing.permissions[p.id]||false} onChange={e=>setEditing({...editing, permissions: {...editing.permissions, [p.id]: e.target.checked}})} className="w-4 h-4 accent-red-600"/>
                     <span className={`text-sm font-bold ${editing.permissions[p.id] ? 'text-red-400' : 'text-gray-400'}`}>{p.label}</span>
                   </label>
@@ -1685,17 +1685,17 @@
               <h2 className="text-xl font-bold text-white mb-6">系統授權等級列表</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {roles.map(r => (
-                  <div key={r.id} className="bg-gray-900/80 border border-gray-700 p-4 rounded-xl flex flex-col group hover:border-gray-500">
+                  <div key={r.id} className="bg-[#121216] border border-[#1f1f25] p-4 rounded-xl flex flex-col group hover:border-[#33333b]">
                     <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2"><span className="font-bold text-lg text-white">{r.name}</span>{r.isSystem && <span className="bg-red-900/50 text-red-300 text-[10px] px-2 py-0.5 rounded border border-red-800 tracking-widest uppercase">SYS-LOCK</span>}</div>
+                      <div className="flex items-center gap-2"><span className="font-bold text-lg text-white">{r.name}</span>{r.isSystem && <span className="bg-red-950/50 text-red-300 text-[10px] px-2 py-0.5 rounded border border-red-900 tracking-widest uppercase">SYS-LOCK</span>}</div>
                       <div className="flex gap-1">
-                        <button onClick={()=>setEditing(r)} className="p-2 hover:bg-gray-700 text-gray-500 hover:text-yellow-400 rounded"><Edit size={16}/></button>
-                        {!r.isSystem && <button onClick={()=>del(r.id, r.name)} className="p-2 hover:bg-gray-700 text-gray-500 hover:text-red-500 rounded"><Trash2 size={16}/></button>}
+                        <button onClick={()=>setEditing(r)} className="p-2 hover:bg-[#1a1a1f] text-gray-500 hover:text-yellow-400 rounded"><Edit size={16}/></button>
+                        {!r.isSystem && <button onClick={()=>del(r.id, r.name)} className="p-2 hover:bg-[#1a1a1f] text-gray-500 hover:text-red-500 rounded"><Trash2 size={16}/></button>}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {PERMISSION_LIST.filter(p=>r.permissions[p.id]).map(p=><span key={p.id} className="bg-gray-800 border border-gray-700 px-2 py-0.5 rounded text-xs text-gray-400">{p.label}</span>)}
-                      {Object.values(r.permissions||{}).every(v=>!v) && <span className="text-red-500 text-xs font-bold bg-red-900/20 px-2 py-0.5 rounded">RESTRICTED - 無存取權限</span>}
+                      {PERMISSION_LIST.filter(p=>r.permissions[p.id]).map(p=><span key={p.id} className="bg-[#050505] border border-[#1f1f25] px-2 py-0.5 rounded text-xs text-gray-400">{p.label}</span>)}
+                      {Object.values(r.permissions||{}).every(v=>!v) && <span className="text-red-500 text-xs font-bold bg-red-950/20 px-2 py-0.5 rounded">RESTRICTED - 無存取權限</span>}
                     </div>
                   </div>
                 ))}
@@ -1736,7 +1736,7 @@
             <div className="space-y-4">
               <Input value={data.name} onChange={e=>setData({...data,name:e.target.value})} placeholder="人員代號 (帳號)" />
               <Input value={data.pwd} onChange={e=>setData({...data,pwd:e.target.value})} placeholder="初始密碼" />
-              <select value={data.role} onChange={e=>setData({...data,role:e.target.value})} className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg"><option value="" disabled>指派職位...</option>{roles.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select>
+              <select value={data.role} onChange={e=>setData({...data,role:e.target.value})} className="w-full bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg"><option value="" disabled>指派職位...</option>{roles.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select>
               <Button onClick={add} className="w-full mt-2">註冊實體</Button>
             </div>
           </Card>
@@ -1744,17 +1744,17 @@
             <h2 className="text-xl font-bold text-white mb-6">活躍連線實體列表</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {users.map(u => (
-                <div key={u.id} className="bg-gray-900/60 border border-gray-700/80 p-4 rounded-xl flex justify-between items-center group backdrop-blur-sm hover:border-gray-500 shadow-inner">
+                <div key={u.id} className="bg-[#121216] border border-[#1f1f25] p-4 rounded-xl flex justify-between items-center group hover:border-[#33333b] shadow-inner">
                   <div className="min-w-0 pr-2">
                     <div className="flex items-center gap-2 mb-2"><span className="font-bold text-lg text-white truncate">{u.name}</span>{(u.role==='admin_role'||u.role==='admin') && <Zap size={14} className="text-yellow-500 fill-yellow-500 drop-shadow-[0_0_5px_#eab308]"/>}</div>
                     <div className="text-xs text-gray-500 flex flex-col gap-1 font-mono">
-                      <span>ROLE: <span className="text-gray-300 bg-gray-800 px-1 rounded">{roles.find(r=>r.id===u.role)?.name || u.role}</span></span>
+                      <span>ROLE: <span className="text-gray-300 bg-[#050505] border border-[#1f1f25] px-1 rounded">{roles.find(r=>r.id===u.role)?.name || u.role}</span></span>
                       <span>PASS: <span className="text-gray-600 select-all">{u.password}</span></span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 flex-shrink-0">
-                    <button onClick={()=>edit(u)} className="p-2 bg-gray-800 hover:bg-yellow-600/20 text-gray-400 hover:text-yellow-500 rounded-lg"><Edit size={16}/></button>
-                    {u.name!=='花大熊' && <button onClick={()=>del(u.id, u.name)} className="p-2 bg-gray-800 hover:bg-red-900/40 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>}
+                    <button onClick={()=>edit(u)} className="p-2 bg-[#0a0a0c] hover:bg-yellow-950/20 text-gray-400 hover:text-yellow-500 rounded-lg"><Edit size={16}/></button>
+                    {u.name!=='花大熊' && <button onClick={()=>del(u.id, u.name)} className="p-2 bg-[#0a0a0c] hover:bg-red-950/40 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>}
                   </div>
                 </div>
               ))}
@@ -1849,10 +1849,10 @@
       };
 
       return (
-        <Card className="max-w-5xl mx-auto border-yellow-900/50 border bg-gray-900/90 backdrop-blur-xl p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-          <div className="flex border-b border-gray-800 bg-black/40">
+        <Card className="max-w-5xl mx-auto border-yellow-950/50 bg-[#0a0a0c] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          <div className="flex border-b border-[#1f1f25] bg-[#050505]">
             {[ {id:'preferences', l:'系統偏好', i:Sliders}, {id:'backup', l:'資料庫I/O', i:Settings}, {id:'logs', l:'操作端點追蹤', i:History} ].map(t=>(
-              <button key={t.id} onClick={()=>setActiveTab(t.id)} className={`flex-1 py-4 font-bold flex items-center justify-center gap-2 ${activeTab===t.id?'bg-gray-800 text-yellow-500 border-b-2 border-yellow-500 shadow-[inset_0_-10px_20px_rgba(234,179,8,0.1)]':'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'}`}>
+              <button key={t.id} onClick={()=>setActiveTab(t.id)} className={`flex-1 py-4 font-bold flex items-center justify-center gap-2 ${activeTab===t.id?'bg-[#121216] text-yellow-500 border-b-2 border-yellow-500 shadow-[inset_0_-10px_20px_rgba(234,179,8,0.05)]':'text-gray-500 hover:text-gray-300 hover:bg-[#1a1a1f]'}`}>
                 <t.i size={18}/> <span className="hidden sm:inline">{t.l}</span>
               </button>
             ))}
@@ -1862,15 +1862,15 @@
             {activeTab === 'preferences' && (
               <div className="space-y-8">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">倉庫與樓層管理</h3>
-                  <div className="bg-gray-800/50 p-5 rounded-xl border border-gray-700 shadow-inner">
+                  <h3 className="text-xl font-bold text-white mb-4 border-b border-[#1f1f25] pb-2">倉庫與樓層管理</h3>
+                  <div className="bg-[#050505] p-5 rounded-xl border border-[#1f1f25] shadow-inner">
                     <div className="flex gap-2 mb-4">
                       <Input value={newWhName} onChange={e=>setNewWhName(e.target.value)} placeholder="新增樓層/倉庫名稱 (例: 一樓吧台)" className="max-w-xs"/>
                       <Button onClick={addWarehouse}>建立節點</Button>
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {warehouses.map(w => (
-                        <div key={w.id} className="bg-gray-900 border border-gray-600 px-3 py-2 rounded-lg flex items-center gap-2 text-sm text-gray-200">
+                        <div key={w.id} className="bg-[#121216] border border-[#1f1f25] px-3 py-2 rounded-lg flex items-center gap-2 text-sm text-gray-200">
                           <Warehouse size={14} className="text-gray-400"/>
                           {w.name}
                           <button onClick={() => delWarehouse(w.id)} className="text-gray-500 hover:text-red-400 ml-2"><X size={14}/></button>
@@ -1881,8 +1881,8 @@
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-4 border-b border-gray-700/50 pb-2">全域成本運算引擎</h3>
-                  <label className="flex items-start gap-4 p-5 bg-gray-800/50 border border-gray-700 rounded-xl cursor-pointer hover:border-red-500/50 group shadow-inner">
+                  <h3 className="text-xl font-bold text-white mb-4 border-b border-[#1f1f25] pb-2">全域成本運算引擎</h3>
+                  <label className="flex items-start gap-4 p-5 bg-[#050505] border border-[#1f1f25] rounded-xl cursor-pointer hover:border-red-900/50 group shadow-inner">
                     <input type="checkbox" checked={systemConfig.ignoreAllCosts} onChange={async(e)=>{ const v=e.target.checked; await setDoc(getDocRef('bar_settings', 'config'), {ignoreAllCosts:v}, {merge:true}); logAction('系統設定', `全域無視成本: ${v}`); }} className="mt-1 w-5 h-5 accent-red-600"/>
                     <div>
                       <div className="font-black text-gray-200 text-lg group-hover:text-red-400">強制終止成本計算 (IGNORE_ALL_COSTS)</div>
@@ -1895,7 +1895,7 @@
             
             {activeTab === 'backup' && (
               <div className="space-y-8">
-                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+                <div className="bg-[#050505] p-6 rounded-xl border border-[#1f1f25]">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><FileSpreadsheet className="text-green-500"/> Excel (CSV) 報表匯出</h3>
                   <p className="text-sm text-gray-400 mb-4">匯出包含 UTF-8 編碼的 CSV 檔案，可直接使用 Excel 開啟且不會亂碼，適用於每日對帳與分析。</p>
                   <div className="flex flex-wrap gap-4">
@@ -1904,12 +1904,12 @@
                   </div>
                 </div>
 
-                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700">
+                <div className="bg-[#050505] p-6 rounded-xl border border-[#1f1f25]">
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><Download className="text-blue-500"/> 系統資料庫打包 (JSON)</h3>
                   <p className="text-sm text-gray-400 mb-4">將完整的系統架構資料打包為 JSON 格式，僅供系統還原與資料遷移使用。</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
                     {Object.entries(COLL_NAMES_MAP).map(([k, l]) => (
-                      <label key={k} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${exportConfig[k] ? 'border-blue-600/50 bg-blue-900/10' : 'border-gray-700 hover:border-gray-500'}`}>
+                      <label key={k} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${exportConfig[k] ? 'border-blue-900/50 bg-blue-950/20' : 'border-[#1f1f25] hover:border-[#33333b]'}`}>
                         <input type="checkbox" checked={exportConfig[k]||false} onChange={e=>setExportConfig({...exportConfig, [k]:e.target.checked})} className="w-4 h-4 accent-blue-600"/>
                         <span className={`text-sm font-mono ${exportConfig[k] ? 'text-white' : 'text-gray-500'}`}>{l}</span>
                       </label>
@@ -1922,16 +1922,16 @@
                   <h3 className="text-lg font-bold text-red-400 mb-4 flex items-center gap-2"><Upload/> 核心覆寫與還原 (Restore)</h3>
                   <input type="file" accept=".json" ref={fileInputRef} onChange={handleFile} className="hidden" />
                   {!pendingImport ? (
-                    <Button variant="outline" onClick={()=>fileInputRef.current?.click()} className="text-red-400 border-red-900/50 hover:bg-red-900/20 w-full sm:w-auto">掛載外部 JSON 封裝檔</Button>
+                    <Button variant="outline" onClick={()=>fileInputRef.current?.click()} className="text-red-400 border-red-900/50 hover:bg-red-950/40 w-full sm:w-auto">掛載外部 JSON 封裝檔</Button>
                   ) : (
-                    <div className="border border-red-700/50 bg-black/40 p-5 rounded-lg shadow-inner">
-                      <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+                    <div className="border border-red-900/50 bg-[#050505] p-5 rounded-lg shadow-inner">
+                      <div className="flex justify-between items-center mb-4 border-b border-[#1f1f25] pb-2">
                         <h4 className="font-bold text-red-400 font-mono tracking-widest uppercase">Select Modules to Overwrite</h4>
-                        <button onClick={()=>setPendingImport(null)} className="text-gray-500 hover:text-white bg-gray-800 p-1 rounded"><X size={18}/></button>
+                        <button onClick={()=>setPendingImport(null)} className="text-gray-500 hover:text-white bg-[#121216] p-1 rounded"><X size={18}/></button>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
                         {Object.keys(pendingImport).filter(k=>COLL_NAMES_MAP[k]).map(k => (
-                          <label key={k} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${importConfig[k] ? 'border-red-600/50 bg-red-900/20' : 'border-gray-700 hover:border-gray-500'}`}>
+                          <label key={k} className={`flex items-center gap-2 p-2 rounded border cursor-pointer ${importConfig[k] ? 'border-red-900/50 bg-red-950/30' : 'border-[#1f1f25] hover:border-[#33333b]'}`}>
                             <input type="checkbox" checked={importConfig[k]||false} onChange={e=>setImportConfig({...importConfig, [k]:e.target.checked})} className="w-4 h-4 accent-red-600"/>
                             <span className={`text-sm font-mono ${importConfig[k] ? 'text-red-200 font-bold' : 'text-gray-500'}`}>{COLL_NAMES_MAP[k]} <span className="text-[10px]">({pendingImport[k].length})</span></span>
                           </label>
@@ -1949,25 +1949,25 @@
 
             {activeTab === 'logs' && (
               <div className="h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4 bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between mb-4 bg-[#050505] p-3 rounded-lg border border-[#1f1f25]">
                   <p className="text-xs text-gray-400 font-mono">SYS_LOG_RETENTION: 30 DAYS</p>
-                  <div className="text-xs bg-yellow-900/30 text-yellow-500 px-3 py-1 rounded-full border border-yellow-700/50 font-bold tracking-widest">
+                  <div className="text-xs bg-yellow-950/30 text-yellow-500 px-3 py-1 rounded-full border border-yellow-900/50 font-bold tracking-widest">
                     TOTAL: {operationLogs.length}
                   </div>
                 </div>
-                <div className="overflow-x-auto overflow-y-auto max-h-[500px] border border-gray-700 rounded-xl bg-black/40 custom-scrollbar shadow-inner">
+                <div className="overflow-x-auto overflow-y-auto max-h-[500px] border border-[#1f1f25] rounded-xl bg-[#050505] custom-scrollbar shadow-inner">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-900/90 sticky top-0 z-10 backdrop-blur-md">
+                    <thead className="bg-[#0a0a0c] sticky top-0 z-10 border-b border-[#1f1f25]">
                       <tr>
-                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Timestamp</th>
-                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Operator</th>
-                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Action</th>
-                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-gray-800">Data Node</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-[#1f1f25]">Timestamp</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-[#1f1f25]">Operator</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-[#1f1f25]">Action</th>
+                        <th className="p-3 text-gray-500 text-[10px] tracking-widest uppercase border-b border-[#1f1f25]">Data Node</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800/50 font-mono text-sm">
+                    <tbody className="divide-y divide-[#1f1f25] font-mono text-sm">
                       {[...operationLogs].sort((a,b)=>b.timestamp-a.timestamp).map(l => (
-                        <tr key={l.id} className="hover:bg-gray-800/40">
+                        <tr key={l.id} className="hover:bg-[#121216]">
                           <td className="p-3 text-xs text-gray-500">{new Date(l.timestamp).toLocaleString()}</td>
                           <td className="p-3 text-gray-300">{l.userName}</td>
                           <td className="p-3 font-bold text-yellow-500/80">{l.action}</td>
@@ -1985,7 +1985,7 @@
       );
     };
 
-    const TagsManager = () => { return <div className="text-center p-10 text-gray-500 font-bold bg-gray-900/50 rounded-xl border border-gray-800">標籤功能已整合至其他模組，或依據後續需求獨立開放。</div>; };
+    const TagsManager = () => { return <div className="text-center p-10 text-gray-500 font-bold bg-[#050505] rounded-xl border border-[#1f1f25]">標籤功能已整合至其他模組，或依據後續需求獨立開放。</div>; };
 
     const rootElement = document.getElementById('root');
     const root = createRoot(rootElement);
