@@ -52,7 +52,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
     import { getFirestore, collection, onSnapshot, doc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, writeBatch } from 'firebase/firestore';
     import {
-      Home, ShoppingCart, ListOrdered, Utensils, Package, Tags, Users, LogOut, GripVertical,
+      Home, ShoppingCart, ListOrdered, Utensils, Package, Users, LogOut, GripVertical,
       Plus, Trash2, Edit, Check, X, Clock, Play, Square, DollarSign, TrendingUp, AlertCircle, Activity,
       Settings, Download, Upload, FileJson, ChevronLeft, ChevronRight, BarChart2, Calendar, Trophy, History, Sliders, Shield, Search, AlertTriangle, Zap, Calculator, ImageIcon, Copy, FileSpreadsheet, Warehouse, Eye, EyeOff
     } from 'lucide-react';
@@ -91,14 +91,14 @@
     const PERMISSION_LIST = [
       { id: 'dashboard', label: '儀表板' }, { id: 'pos', label: '點餐系統' },
       { id: 'orders', label: '記帳歷史' }, { id: 'menu', label: '菜單管理' },
-      { id: 'inventory', label: '庫存管理' }, { id: 'tags', label: '標籤管理' },
+      { id: 'inventory', label: '庫存管理' },
       { id: 'activities', label: '活動優惠' }, { id: 'users', label: '成員管理' },
       { id: 'roles', label: '權限職位' }, { id: 'settings', label: '系統設定' }
     ];
 
     const COLL_NAMES_MAP = {
       bar_users: '成員帳號', bar_roles: '權限職位', bar_categories: '菜單分類',
-      bar_items: '菜單品項', bar_tags: '標籤', bar_activities: '活動優惠',
+      bar_items: '菜單品項', bar_activities: '活動優惠',
       bar_ingredients: '食材庫存', bar_orders: '記帳歷史', bar_inventory: '進貨紀錄',
       bar_operation_logs: '操作紀錄', bar_settings: '系統設定'
     };
@@ -218,7 +218,7 @@
       const [activeTab, setActiveTab] = useState('dashboard');
 
       const [allData, setAllData] = useState({
-        users: [], roles: [], categories: [], items: [], tags: [],
+        users: [], roles: [], categories: [], items: [],
         activities: [], orders: [], inventoryLogs: [], ingredients: [],
         operationLogs: [], settingsData: []
       });
@@ -318,7 +318,7 @@
 
         subscribe('bar_users', 'users'); subscribe('bar_roles', 'roles');
         subscribe('bar_categories', 'categories'); subscribe('bar_items', 'items');
-        subscribe('bar_tags', 'tags'); subscribe('bar_activities', 'activities');
+        subscribe('bar_activities', 'activities');
         subscribe('bar_ingredients', 'ingredients'); subscribe('bar_settings', 'settingsData');
         
         // 效能優化：限制龐大紀錄的回傳數量
@@ -361,7 +361,7 @@
       const allNavItems = [
         { id: 'dashboard', label: '儀表板', icon: Home }, { id: 'pos', label: '點餐系統', icon: ShoppingCart },
         { id: 'orders', label: '記帳歷史', icon: ListOrdered }, { id: 'menu', label: '菜單管理', icon: Utensils },
-        { id: 'inventory', label: '庫存管理', icon: Package }, { id: 'tags', label: '標籤管理', icon: Tags },
+        { id: 'inventory', label: '庫存管理', icon: Package },
         { id: 'activities', label: '活動優惠', icon: Activity }, { id: 'users', label: '成員管理', icon: Users },
         { id: 'roles', label: '權限職位', icon: Shield }, { id: 'settings', label: '系統設定', icon: Settings },
       ];
@@ -447,7 +447,6 @@
                   {activeTab === 'orders' && <OrdersView />}
                   {activeTab === 'menu' && <MenuManager />}
                   {activeTab === 'inventory' && <InventoryManager />}
-                  {activeTab === 'tags' && <TagsManager />}
                   {activeTab === 'activities' && <ActivityManager />}
                   {activeTab === 'users' && <UserManager />}
                   {activeTab === 'roles' && <RoleManager />}
@@ -1765,8 +1764,8 @@
     };
 
     const SettingsView = () => {
-      const { users, roles, categories, items, tags, activities, orders, inventoryLogs, ingredients, operationLogs, settingsData, logAction, systemConfig, showAlert, warehouses } = useAppContext();
-      const allData = { bar_users: users, bar_roles: roles, bar_categories: categories, bar_items: items, bar_tags: tags, bar_activities: activities, bar_orders: orders, bar_inventory: inventoryLogs, bar_ingredients: ingredients, bar_operation_logs: operationLogs };
+      const { users, roles, categories, items, activities, orders, inventoryLogs, ingredients, operationLogs, settingsData, logAction, systemConfig, showAlert, warehouses } = useAppContext();
+      const allData = { bar_users: users, bar_roles: roles, bar_categories: categories, bar_items: items, bar_activities: activities, bar_orders: orders, bar_inventory: inventoryLogs, bar_ingredients: ingredients, bar_operation_logs: operationLogs };
       
       const [activeTab, setActiveTab] = useState('preferences');
       const [isImporting, setIsImporting] = useState(false);
@@ -1984,8 +1983,6 @@
         </Card>
       );
     };
-
-    const TagsManager = () => { return <div className="text-center p-10 text-gray-500 font-bold bg-[#050505] rounded-xl border border-[#1f1f25]">標籤功能已整合至其他模組，或依據後續需求獨立開放。</div>; };
 
     const rootElement = document.getElementById('root');
     const root = createRoot(rootElement);
