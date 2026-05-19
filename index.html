@@ -54,7 +54,7 @@
     import {
       Home, ShoppingCart, ListOrdered, Utensils, Package, Users, LogOut, GripVertical,
       Plus, Trash2, Edit, Check, X, Clock, Play, Square, DollarSign, TrendingUp, AlertCircle, Activity,
-      Settings, Download, Upload, FileJson, ChevronLeft, ChevronRight, BarChart2, Calendar, Trophy, History, Sliders, Shield, Search, AlertTriangle, Zap, Calculator, ImageIcon, Copy, FileSpreadsheet, Warehouse, Eye, EyeOff
+      Settings, Download, Upload, FileJson, ChevronLeft, ChevronRight, BarChart2, Calendar, Trophy, History, Sliders, Shield, Search, AlertTriangle, Zap, Calculator, ImageIcon, Copy, FileSpreadsheet, Warehouse, Eye, EyeOff, Tag
     } from 'lucide-react';
 
     // --- Firebase Initialization ---
@@ -1293,17 +1293,25 @@
       const { ingredients, items, warehouses, showAlert, showConfirm, showEdit, logAction, systemConfig, ingredientMap } = useAppContext();
       const [activeTab, setActiveTab] = useState('inventory'); 
       
-      const [newIng, setNewIng] = useState({ name: '', cost: '', ignore: false });
-      const [stockOp, setStockOp] = useState({ id: '', qty: '', totalSpent: '', reason: '一般進貨', warehouseId: warehouses[0]?.id || 'default' });
+      const [newIng, setNewIng] = useState({ name: '', cost: '', unitWeight: '', weightUnit: 'g', ignore: false });
+      const [stockOp, setStockOp] = useState({ id: '', qty: '', totalSpent: '', reason: '日常進貨', warehouseId: warehouses[0]?.id || 'default' });
+      const [isCustomReason, setIsCustomReason] = useState(false);
       
       const [calcItem, setCalcItem] = useState('');
       const [calcPortions, setCalcPortions] = useState(10);
 
       const addIng = async () => {
         if (!newIng.name || !newIng.cost) return showAlert("請填寫食材名稱與基礎成本");
-        await addDoc(getCollRef('bar_ingredients'), { name: newIng.name, stock: 0, cost: Number(newIng.cost), ignoreCost: newIng.ignore });
+        await addDoc(getCollRef('bar_ingredients'), { 
+          name: newIng.name, 
+          stock: 0, 
+          cost: Number(newIng.cost), 
+          unitWeight: newIng.unitWeight ? Number(newIng.unitWeight) : null,
+          weightUnit: newIng.weightUnit,
+          ignoreCost: newIng.ignore 
+        });
         logAction('新增食材', `新增: ${newIng.name}`);
-        setNewIng({ name: '', cost: '', ignore: false });
+        setNewIng({ name: '', cost: '', unitWeight: '', weightUnit: 'g', ignore: false });
       };
 
       const addStock = async () => {
@@ -1339,7 +1347,7 @@
         const whName = warehouses.find(w => w.id === targetWId)?.name || '未知倉庫';
         await addDoc(getCollRef('bar_inventory'), { 
           ingredientId: ing.id, ingredientName: ing.name, changeQty: qty, 
-          reason: stockOp.reason, costPerItem: inputUnitCost > 0 ? inputUnitCost : oldCost, 
+          reason: stockOp.reason || '無指定事由', costPerItem: inputUnitCost > 0 ? inputUnitCost : oldCost, 
           warehouseId: targetWId, timestamp: Date.now() 
         });
         
@@ -1347,13 +1355,73 @@
         if (qty > 0 && totalSpent > 0) logMsg += ` / 公款扣除: $${totalSpent}`;
         logAction('庫存調整', logMsg);
         
-        setStockOp({ id: '', qty: '', totalSpent: '', reason: '一般進貨', warehouseId: stockOp.warehouseId });
+        setStockOp({ id: '', qty: '', totalSpent: '', reason: isCustomReason ? '' : stockOp.reason, warehouseId: stockOp.warehouseId });
       };
 
-      const editIng = (ing) => showEdit({
-        title: '編輯食材設定', fields: [{ key: 'name', label: '名稱', defaultValue: ing.name }, { key: 'cost', type: 'number', label: '強制覆寫成本', defaultValue: ing.cost }, { key: 'ignore', type: 'checkbox', label: '無視此成本', defaultValue: ing.ignoreCost||false }],
-        onSave: (v) => { if(v.name&&v.cost) { updateDoc(getDocRef('bar_ingredients', ing.id), { name: v.name, cost: Number(v.cost), ignoreCost: v.ignore }); logAction('編輯食材', `更新 ${v.name}`); } }
-      });
+      const editIng = (ing) => {
+        const stockFields = warehouses.map(w => ({
+          key: `stock_${w.id}`, type: 'number', label: `👉 [即時數量] ${w.name}`, defaultValue: getStockForWarehouse(ing, w.id)
+        }));
+
+        showEdit({
+          title: '編輯食材設定與即時庫存',
+          fields: [
+            { key: 'name', label: '名稱', defaultValue: ing.name }, 
+            { key: 'cost', type: 'number', label: '強制覆寫成本', defaultValue: ing.cost }, 
+            { key: 'unitWeight', type: 'number', label: '單件重量/容量', defaultValue: ing.unitWeight || '' },
+            { key: 'weightUnit', type: 'select', label: '單位', defaultValue: ing.weightUnit || 'g', options: [{value:'g',label:'公克 (g)'},{value:'kg',label:'公斤 (kg)'},{value:'ml',label:'毫升 (ml)'},{value:'l',label:'公升 (L)'}] },
+            { key: 'ignore', type: 'checkbox', label: '無視此成本', defaultValue: ing.ignoreCost||false },
+            ...stockFields
+          ],
+          onSave: async (v) => { 
+            if(v.name && v.cost) { 
+              const newStocksMap = { ...(ing.stocks || { default: ing.stock || 0 }) };
+              let newTotalStock = ing.stock || 0;
+              const changes = [];
+
+              // 計算各倉庫的庫存變動
+              for (const w of warehouses) {
+                const oldWStock = getStockForWarehouse(ing, w.id);
+                const newWStock = v[`stock_${w.id}`] !== '' ? Number(v[`stock_${w.id}`]) : 0;
+                const diff = newWStock - oldWStock;
+                
+                if (diff !== 0) {
+                  newStocksMap[w.id] = newWStock;
+                  newTotalStock += diff;
+                  changes.push({ warehouseId: w.id, warehouseName: w.name, diff });
+                }
+              }
+
+              // 更新食材資料與總庫存
+              await updateDoc(getDocRef('bar_ingredients', ing.id), { 
+                name: v.name, 
+                cost: Number(v.cost), 
+                unitWeight: v.unitWeight ? Number(v.unitWeight) : null,
+                weightUnit: v.weightUnit,
+                ignoreCost: v.ignore,
+                stock: newTotalStock,
+                stocks: newStocksMap
+              }); 
+              logAction('編輯食材', `更新 ${v.name}`); 
+
+              // 如果有即時修改庫存，寫入歷史紀錄與操作日誌
+              if (changes.length > 0) {
+                const batch = writeBatch(db);
+                changes.forEach(change => {
+                  const invLogRef = doc(getCollRef('bar_inventory'));
+                  batch.set(invLogRef, {
+                    ingredientId: ing.id, ingredientName: v.name, changeQty: change.diff,
+                    reason: '即時編輯', costPerItem: Number(v.cost),
+                    warehouseId: change.warehouseId, timestamp: Date.now()
+                  });
+                  logAction('庫存調整', `[${change.warehouseName}] ${v.name} ${change.diff > 0 ? '+' : ''}${change.diff} (事由: 即時編輯)`);
+                });
+                await batch.commit();
+              }
+            } 
+          }
+        });
+      };
 
       const deleteIng = (ing) => {
         showConfirm(`確定要永久刪除食材「${ing.name}」嗎？這將無法復原。`, async () => {
@@ -1392,6 +1460,17 @@
                   <div className="space-y-4">
                     <Input value={newIng.name} onChange={e=>setNewIng({...newIng,name:e.target.value})} placeholder="食材名稱 (例: 伏特加)" />
                     <Input type="number" value={newIng.cost} onChange={e=>setNewIng({...newIng,cost:e.target.value})} placeholder="初始單件成本 $" />
+                    
+                    <div className="flex gap-2">
+                      <Input type="number" value={newIng.unitWeight} onChange={e=>setNewIng({...newIng,unitWeight:e.target.value})} placeholder="單件重量/容量 (選填)" className="flex-grow" />
+                      <select value={newIng.weightUnit} onChange={e=>setNewIng({...newIng, weightUnit: e.target.value})} className="w-28 bg-[#050505] border border-[#1f1f25] text-white px-2 py-2 rounded-sm focus:outline-none focus:border-red-700 text-sm font-bold">
+                        <option value="g">公克 (g)</option>
+                        <option value="kg">公斤 (kg)</option>
+                        <option value="ml">毫升 (ml)</option>
+                        <option value="l">公升 (L)</option>
+                      </select>
+                    </div>
+
                     <label className="flex items-center gap-2 p-2 bg-[#050505] rounded-lg cursor-pointer text-sm text-gray-300 border border-[#1f1f25]">
                       <input type="checkbox" checked={newIng.ignore} onChange={e=>setNewIng({...newIng,ignore:e.target.checked})} className="w-4 h-4 accent-red-600"/>
                       暫時不計算此成本
@@ -1427,8 +1506,33 @@
                         系統自動結算本次單位成本: ${(Number(stockOp.totalSpent) / Number(stockOp.qty)).toFixed(2)} / 件
                       </div>
                     )}
-                    <Input value={stockOp.reason} onChange={e=>setStockOp({...stockOp,reason:e.target.value})} placeholder="變動事由 (例: 員工代墊進貨)" />
-                    <Button onClick={addStock} variant="secondary" className="w-full shadow-md">送出變動並記錄公帳</Button>
+
+                    {/* 變動事由標籤區塊 */}
+                    <div className="flex flex-col gap-2 pt-2 border-t border-[#1f1f25]">
+                      <label className="text-xs text-gray-500 font-bold uppercase tracking-wider flex items-center gap-1"><Tag size={12}/> 變動事由</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['日常進貨', '營業消耗', '退貨/報廢', '贊助食材'].map(tag => (
+                          <button
+                            key={tag}
+                            onClick={() => { setStockOp({...stockOp, reason: tag}); setIsCustomReason(false); }}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-colors ${!isCustomReason && stockOp.reason === tag ? 'bg-red-900/50 text-red-400 border-red-700/50' : 'bg-[#050505] text-gray-400 border-[#1f1f25] hover:border-gray-500'}`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => { setIsCustomReason(true); setStockOp({...stockOp, reason: ''}); }}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-colors ${isCustomReason ? 'bg-red-900/50 text-red-400 border-red-700/50' : 'bg-[#050505] text-gray-400 border-[#1f1f25] hover:border-gray-500'}`}
+                        >
+                          ✎ 自訂輸入...
+                        </button>
+                      </div>
+                      {isCustomReason && (
+                        <Input value={stockOp.reason} onChange={e=>setStockOp({...stockOp,reason:e.target.value})} placeholder="請手動輸入變動事由" className="mt-1" />
+                      )}
+                    </div>
+
+                    <Button onClick={addStock} variant="secondary" className="w-full shadow-md mt-2">送出變動並記錄公帳</Button>
                   </div>
                 </Card>
               </div>
@@ -1460,11 +1564,24 @@
                               {isLow && <AlertTriangle size={14} className="text-red-500"/>} {ing.name}
                             </td>
                             <td className="p-4">
-                              <div className={`font-black mb-1 ${isLow ? 'text-red-400' : 'text-green-400'}`}>總量: {totalStock}</div>
+                              <div className={`font-black mb-1 flex items-baseline gap-2 ${isLow ? 'text-red-400' : 'text-green-400'}`}>
+                                <span>總量: {totalStock}</span>
+                                {ing.unitWeight && (
+                                  <span className="text-xs font-normal text-gray-500">
+                                    總重: {(totalStock * ing.unitWeight).toLocaleString()} {ing.weightUnit}
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex flex-wrap gap-1 text-[10px] text-gray-400">
                                 {warehouses.map(w => {
                                   const wStock = getStockForWarehouse(ing, w.id);
-                                  return wStock > 0 ? <span key={w.id} className="bg-[#121216] border border-[#1f1f25] px-1.5 py-0.5 rounded">{w.name}: {wStock}</span> : null;
+                                  if (wStock <= 0) return null;
+                                  return (
+                                    <span key={w.id} className="bg-[#121216] border border-[#1f1f25] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                      {w.name}: {wStock}
+                                      {ing.unitWeight && <span className="text-gray-600">({(wStock * ing.unitWeight).toLocaleString()}{ing.weightUnit})</span>}
+                                    </span>
+                                  );
                                 })}
                               </div>
                             </td>
@@ -1820,7 +1937,7 @@
             if(!importConfig[coll]) continue;
             for (const docData of docsArr) {
               const { id, ...rest } = docData; if(!id) continue; let targetId = id;
-              if (rest.name && ['bar_users','bar_roles','bar_categories','bar_items','bar_tags','bar_activities','bar_ingredients'].includes(coll)) {
+              if (rest.name && ['bar_users','bar_roles','bar_categories','bar_items','bar_activities','bar_ingredients'].includes(coll)) {
                 const exist = allData[coll.replace('bar_','')]?.find(d => d.name === rest.name); if(exist) targetId = exist.id;
               }
               await setDoc(getDocRef(coll, targetId), rest); c++;
