@@ -158,20 +158,20 @@
                   {f.type === 'select' ? (
                     <select
                       className="w-full bg-[#121216] border border-[#1f1f25] text-white px-3 py-2 rounded-lg focus:border-red-500 font-bold"
-                      value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})}
+                      value={values[f.key] !== undefined ? values[f.key] : ''} onChange={e => setValues({...values, [f.key]: e.target.value})}
                     >
                       {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : f.type === 'checkbox' ? (
                     <label className="flex items-center gap-2 cursor-pointer mt-2 mb-2 p-3 border border-[#1f1f25] rounded-lg hover:bg-[#121216] bg-[#0a0a0c]">
                       <input
-                        type="checkbox" checked={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.checked})}
+                        type="checkbox" checked={values[f.key] || false} onChange={e => setValues({...values, [f.key]: e.target.checked})}
                         className="w-4 h-4 accent-red-600"
                       />
                       <span className="text-gray-300 font-bold">{f.label}</span>
                     </label>
                   ) : (
-                    <Input type={f.type || 'text'} value={values[f.key]} onChange={e => setValues({...values, [f.key]: e.target.value})} />
+                    <Input type={f.type || 'text'} value={values[f.key] !== undefined ? values[f.key] : ''} onChange={e => setValues({...values, [f.key]: e.target.value})} />
                   )}
                 </div>
               ))}
@@ -1118,7 +1118,7 @@
       const delCat = (id, name) => showConfirm('確定刪除分類？', () => handleAction(() => deleteDoc(getDocRef('bar_categories', id)), `刪除分類: ${name}`));
 
       const saveItem = () => {
-        if (!itemData.name || !itemData.price || !itemData.cat) return showAlert('填寫完整資訊 (分類、名稱、價格)');
+        if (!itemData.name || itemData.price === '' || itemData.price === null || itemData.price === undefined || !itemData.cat) return showAlert('填寫完整資訊 (分類、名稱、價格)');
         handleAction(async () => {
           const payload = {
             name: itemData.name, price: Number(itemData.price), categoryId: itemData.cat, 
@@ -1305,7 +1305,7 @@
         let totalKg = 0;
         ingredients.forEach(ing => {
           const qty = getStockForWarehouse(ing, wId);
-          if (qty > 0 && ing.unitWeight) {
+          if (qty > 0 && ing.unitWeight !== undefined && ing.unitWeight !== null) {
             let weightKg = Number(ing.unitWeight);
             if (ing.weightUnit === 'g' || ing.weightUnit === 'ml') weightKg = weightKg / 1000;
             totalKg += (qty * weightKg);
@@ -1315,12 +1315,12 @@
       };
 
       const addIng = async () => {
-        if (!newIng.name || !newIng.cost) return showAlert("請填寫食材名稱與基礎成本");
+        if (!newIng.name || newIng.cost === '' || newIng.cost === null || newIng.cost === undefined) return showAlert("請填寫食材名稱與基礎成本");
         await addDoc(getCollRef('bar_ingredients'), { 
           name: newIng.name, 
           stock: 0, 
           cost: Number(newIng.cost), 
-          unitWeight: newIng.unitWeight ? Number(newIng.unitWeight) : null,
+          unitWeight: (newIng.unitWeight !== '' && newIng.unitWeight !== null && newIng.unitWeight !== undefined) ? Number(newIng.unitWeight) : null,
           weightUnit: newIng.weightUnit,
           ignoreCost: newIng.ignore 
         });
@@ -1338,7 +1338,7 @@
         const inputUnitCost = (qty > 0 && stockOp.totalSpent !== '') ? (totalSpent / qty) : 0;
         
         const oldStock = ing.stock || 0;
-        const oldCost = ing.cost || 0;
+        const oldCost = ing.cost !== undefined ? ing.cost : 0;
         const newStockTotal = oldStock + qty;
         
         // 樓層/倉庫數量更新
@@ -1381,14 +1381,15 @@
           title: '編輯食材設定與即時庫存',
           fields: [
             { key: 'name', label: '名稱', defaultValue: ing.name }, 
-            { key: 'cost', type: 'number', label: '強制覆寫成本', defaultValue: ing.cost }, 
-            { key: 'unitWeight', type: 'number', label: '單件重量/容量', defaultValue: ing.unitWeight || '' },
+            { key: 'cost', type: 'number', label: '強制覆寫成本', defaultValue: ing.cost !== undefined ? ing.cost : 0 }, 
+            { key: 'unitWeight', type: 'number', label: '單件重量/容量', defaultValue: (ing.unitWeight !== undefined && ing.unitWeight !== null) ? ing.unitWeight : '' },
             { key: 'weightUnit', type: 'select', label: '單位', defaultValue: ing.weightUnit || 'g', options: [{value:'g',label:'公克 (g)'},{value:'kg',label:'公斤 (kg)'},{value:'ml',label:'毫升 (ml)'},{value:'l',label:'公升 (L)'}] },
             { key: 'ignore', type: 'checkbox', label: '無視此成本', defaultValue: ing.ignoreCost||false },
             ...stockFields
           ],
           onSave: async (v) => { 
-            if(v.name && v.cost) { 
+            // 精準判斷條件，避免 0 被當作 false 而被系統自動略過儲存動作
+            if(v.name && v.cost !== '' && v.cost !== null && v.cost !== undefined) { 
               const newStocksMap = { ...(ing.stocks || { default: ing.stock || 0 }) };
               let newTotalStock = ing.stock || 0;
               const changes = [];
@@ -1396,7 +1397,7 @@
               // 計算各倉庫的庫存變動
               for (const w of warehouses) {
                 const oldWStock = getStockForWarehouse(ing, w.id);
-                const newWStock = v[`stock_${w.id}`] !== '' ? Number(v[`stock_${w.id}`]) : 0;
+                const newWStock = v[`stock_${w.id}`] !== '' && v[`stock_${w.id}`] !== undefined ? Number(v[`stock_${w.id}`]) : 0;
                 const diff = newWStock - oldWStock;
                 
                 if (diff !== 0) {
@@ -1408,11 +1409,11 @@
 
               // 更新食材資料與總庫存
               await updateDoc(getDocRef('bar_ingredients', ing.id), { 
-                name: v.name, 
+                name: String(v.name), 
                 cost: Number(v.cost), 
-                unitWeight: v.unitWeight ? Number(v.unitWeight) : null,
-                weightUnit: v.weightUnit,
-                ignoreCost: v.ignore,
+                unitWeight: (v.unitWeight !== '' && v.unitWeight !== null && v.unitWeight !== undefined) ? Number(v.unitWeight) : null,
+                weightUnit: v.weightUnit || 'g',
+                ignoreCost: Boolean(v.ignore),
                 stock: newTotalStock,
                 stocks: newStocksMap
               }); 
@@ -1603,7 +1604,7 @@
                             <td className="p-4">
                               <div className={`font-black mb-1 flex items-baseline gap-2 ${isLow ? 'text-red-400' : 'text-green-400'}`}>
                                 <span>總量: {totalStock}</span>
-                                {ing.unitWeight && (
+                                {ing.unitWeight !== undefined && ing.unitWeight !== null && (
                                   <span className="text-xs font-normal text-gray-500">
                                     總重: {(totalStock * ing.unitWeight).toLocaleString()} {ing.weightUnit}
                                   </span>
@@ -1616,16 +1617,16 @@
                                   return (
                                     <span key={w.id} className="bg-[#121216] border border-[#1f1f25] px-1.5 py-0.5 rounded flex items-center gap-1">
                                       {w.name}: {wStock}
-                                      {ing.unitWeight && <span className="text-gray-600">({(wStock * ing.unitWeight).toLocaleString()}{ing.weightUnit})</span>}
+                                      {ing.unitWeight !== undefined && ing.unitWeight !== null && <span className="text-gray-600">({(wStock * ing.unitWeight).toLocaleString()}{ing.weightUnit})</span>}
                                     </span>
                                   );
                                 })}
                               </div>
                             </td>
                             <td className="p-4 text-right text-gray-400">
-                              {ignore ? <span className="line-through text-gray-600">${ing.cost || 0}</span> : `$${ing.cost || 0}`}
+                              {ignore ? <span className="line-through text-gray-600">${ing.cost !== undefined ? ing.cost : 0}</span> : `$${ing.cost !== undefined ? ing.cost : 0}`}
                             </td>
-                            <td className="p-4 text-right font-bold text-yellow-500/80">{ignore ? '$0' : `$${totalStock * (ing.cost || 0)}`}</td>
+                            <td className="p-4 text-right font-bold text-yellow-500/80">{ignore ? '$0' : `$${totalStock * (ing.cost !== undefined ? ing.cost : 0)}`}</td>
                             <td className="p-4 text-center">
                               <div className="flex justify-center gap-1">
                                 <button onClick={() => editIng(ing)} className="text-gray-500 hover:text-yellow-400 bg-[#0a0a0c] p-2 rounded" title="編輯"><Edit size={16}/></button>
@@ -1730,14 +1731,14 @@
       const [actData, setActData] = useState({ name: '', type: 'percent', value: '', start: '', end: '' });
 
       const add = async () => {
-        if (!actData.name || !actData.value || !actData.start || !actData.end) return showAlert("請填寫完整");
+        if (!actData.name || actData.value === '' || actData.value === null || !actData.start || !actData.end) return showAlert("請填寫完整");
         await addDoc(getCollRef('bar_activities'), { name: actData.name, type: actData.type, value: Number(actData.value), startTime: new Date(actData.start).toISOString(), endTime: new Date(actData.end).toISOString(), isActive: true });
         logAction('新增活動', `新增: ${actData.name}`); setActData({name:'', type:'percent', value:'', start:'', end:''});
       };
 
       const edit = (act) => showEdit({
         title: '編輯活動', fields: [ { key: 'name', label: '活動名稱', defaultValue: act.name }, { key: 'type', label: '類型', type: 'select', defaultValue: act.type, options: [{value:'percent', label:'打折(%)'}, {value:'amount', label:'折抵現金($)'}] }, { key: 'value', type: 'number', label: '數值', defaultValue: act.value }, { key: 's', type: 'datetime-local', label: '開始', defaultValue: toLocalDatetime(act.startTime) }, { key: 'e', type: 'datetime-local', label: '結束', defaultValue: toLocalDatetime(act.endTime) } ],
-        onSave: (v) => { if(v.name) { updateDoc(getDocRef('bar_activities', act.id), { name: v.name, type: v.type, value: Number(v.value), startTime: new Date(v.s).toISOString(), endTime: new Date(v.e).toISOString()}); logAction('編輯活動', v.name); } }
+        onSave: (v) => { if(v.name && v.value !== '' && v.value !== null) { updateDoc(getDocRef('bar_activities', act.id), { name: v.name, type: v.type, value: Number(v.value), startTime: new Date(v.s).toISOString(), endTime: new Date(v.e).toISOString()}); logAction('編輯活動', v.name); } }
       });
 
       const toggle = (act) => { updateDoc(getDocRef('bar_activities', act.id), { isActive: !act.isActive }); logAction('切換狀態', `${act.name} -> ${!act.isActive}`); };
