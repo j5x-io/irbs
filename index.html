@@ -788,7 +788,7 @@
     };
 
     const POSView = () => {
-      const { items, categories, activities, ingredients, warehouses, handleCheckout, showAlert, showConfirm, logAction, systemConfig, ingredientMap } = useAppContext();
+      const { items, categories, activities, ingredients, warehouses, handleCheckout, showAlert, showConfirm, logAction, systemConfig, ingredientMap, appUser } = useAppContext();
       const [cart, setCart] = useState([]);
       const [guestName, setGuestName] = useState('');
       const [selectedCategoryId, setSelectedCategoryId] = useState('all');
@@ -859,7 +859,7 @@
         if (cart.length === 0) return;
         setIsProcessing(true);
         const success = await handleCheckout({
-          guestName, items: cart, ...cartTotals, warehouseId: selectedWarehouseId, activityId: selectedActivityId !== 'none' ? selectedActivityId : null
+          guestName, operator: appUser.name, items: cart, ...cartTotals, warehouseId: selectedWarehouseId, activityId: selectedActivityId !== 'none' ? selectedActivityId : null
         });
         if (success) {
           const whName = warehouses.find(w => w.id === selectedWarehouseId)?.name || '未知倉庫';
@@ -1035,13 +1035,45 @@
     };
 
     const OrdersView = () => {
-      const { orders, warehouses, showAlert } = useAppContext();
+      const { orders, warehouses, showAlert, showConfirm, showEdit, logAction, appUser } = useAppContext();
+      const isAdmin = appUser?.role === 'admin_role' || appUser?.role === 'admin';
 
       const handleCopyBill = (o) => {
         const whName = warehouses.find(w => w.id === o.warehouseId)?.name || '未指定倉庫';
-        const text = `=== 鐵騎酒吧 帳單 ===\n時間: ${new Date(o.timestamp).toLocaleString()}\n桌號/客人: ${o.guestName}\n出餐庫存: ${whName}\n-------------------\n${o.items.map(i=>`${i.name} x${i.qty}  $${i.price*i.qty}`).join('\n')}\n-------------------\n小計: $${o.subtotal}\n折扣: -$${Math.round(o.discountAmount || 0)}\n總計: $${Math.round(o.total)}\n===================`;
+        const text = `=== 鐵騎酒吧 帳單 ===\n時間: ${new Date(o.timestamp).toLocaleString()}\n負責人: ${o.operator || '未指定'}\n桌號/客人: ${o.guestName}\n出餐庫存: ${whName}\n-------------------\n${o.items.map(i=>`${i.name} x${i.qty}  $${i.price*i.qty}`).join('\n')}\n-------------------\n小計: $${o.subtotal}\n折扣: -$${Math.round(o.discountAmount || 0)}\n總計: $${Math.round(o.total)}\n===================`;
         copyToClipboard(text);
         showAlert("📝 帳單文字已成功複製到剪貼簿！");
+      };
+
+      const handleDeleteOrder = (o) => {
+        showConfirm("確定要刪除這筆訂單嗎？\n(注意：刪除訂單「不會」自動退回已扣除的食材庫存，若需退回請至庫存頁面手動補回)", async () => {
+          await deleteDoc(getDocRef('bar_orders', o.id));
+          logAction('刪除訂單', `刪除訂單 - 客人: ${o.guestName}, 金額: $${Math.round(o.total)}`);
+          showAlert("訂單已成功刪除");
+        });
+      };
+
+      const handleEditOrder = (o) => {
+        showEdit({
+          title: '編輯記帳紀錄',
+          fields: [
+            { key: 'guestName', label: '桌號/客人', defaultValue: o.guestName },
+            { key: 'operator', label: '負責人', defaultValue: o.operator || appUser.name },
+            { key: 'total', type: 'number', label: '實收總額 (手動校正)', defaultValue: Math.round(o.total) }
+          ],
+          onSave: async (v) => {
+            if (v.guestName && v.total !== '') {
+              await updateDoc(getDocRef('bar_orders', o.id), {
+                guestName: v.guestName,
+                operator: v.operator || '未指定',
+                total: Number(v.total)
+              });
+              logAction('編輯訂單', `編輯訂單 [${o.id}] - 客人: ${v.guestName}, 實收校正為: $${v.total}`);
+            } else {
+              showAlert("請填寫完整資訊");
+            }
+          }
+        });
       };
 
       return (
@@ -1051,7 +1083,7 @@
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#0a0a0c] border-b border-[#1f1f25]">
-                  <th className="p-4 text-gray-400 font-bold text-sm">時間</th>
+                  <th className="p-4 text-gray-400 font-bold text-sm">時間 / 負責人</th>
                   <th className="p-4 text-gray-400 font-bold text-sm">桌號/客人</th>
                   <th className="p-4 text-gray-400 font-bold text-sm">明細</th>
                   <th className="p-4 text-gray-400 font-bold text-sm text-right">小計</th>
@@ -1063,7 +1095,10 @@
               <tbody className="divide-y divide-[#1f1f25] bg-[#050505]">
                 {orders.map(o => (
                   <tr key={o.id} className="hover:bg-[#121216]">
-                    <td className="p-4 text-sm text-gray-400 font-mono">{new Date(o.timestamp).toLocaleString()}</td>
+                    <td className="p-4 text-sm text-gray-400 font-mono">
+                      <div>{new Date(o.timestamp).toLocaleString()}</div>
+                      <div className="text-gray-500 mt-1 flex items-center gap-1 text-xs"><Users size={12}/> {o.operator || '系統'}</div>
+                    </td>
                     <td className="p-4 font-bold text-gray-200">
                       {o.guestName}
                       {o.warehouseId && <div className="text-[10px] text-gray-500 mt-1"><Warehouse size={10} className="inline mr-1"/>{warehouses.find(w=>w.id===o.warehouseId)?.name || '未知'}</div>}
@@ -1073,9 +1108,21 @@
                     <td className="p-4 text-right text-yellow-500/80 font-mono">-{Math.round(o.discountAmount || 0)}</td>
                     <td className="p-4 text-right font-black text-red-400 font-mono">${Math.round(o.total)}</td>
                     <td className="p-4 text-center">
-                      <button onClick={() => handleCopyBill(o)} className="text-gray-400 hover:text-white bg-[#121216] hover:bg-[#1a1a1f] p-2 rounded-lg border border-[#1f1f25]" title="複製帳單">
-                        <Copy size={16}/>
-                      </button>
+                      <div className="flex justify-center gap-1">
+                        <button onClick={() => handleCopyBill(o)} className="text-gray-400 hover:text-white bg-[#121216] hover:bg-[#1a1a1f] p-2 rounded-lg border border-[#1f1f25]" title="複製帳單">
+                          <Copy size={16}/>
+                        </button>
+                        {isAdmin && (
+                          <>
+                            <button onClick={() => handleEditOrder(o)} className="text-gray-400 hover:text-yellow-400 bg-[#121216] hover:bg-[#1a1a1f] p-2 rounded-lg border border-[#1f1f25]" title="編輯">
+                              <Edit size={16}/>
+                            </button>
+                            <button onClick={() => handleDeleteOrder(o)} className="text-gray-400 hover:text-red-500 bg-[#121216] hover:bg-[#1a1a1f] p-2 rounded-lg border border-[#1f1f25]" title="刪除">
+                              <Trash2 size={16}/>
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
